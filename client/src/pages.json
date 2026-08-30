@@ -7,7 +7,12 @@
       "^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue",
       "^PageEmpty$": "@/components/PageEmpty/PageEmpty.vue",
       "^PageLoading$": "@/components/PageLoading/PageLoading.vue",
-      "^DishCard$": "@/components/DishCard/DishCard.vue"
+      "^DishCard$": "@/components/DishCard/DishCard.vue",
+      "^FoodCard$": "@/components/FoodCard/FoodCard.vue",
+      "^SpecEditor$": "@/components/SpecEditor/SpecEditor.vue",
+      "^SpecPicker$": "@/components/SpecPicker/SpecPicker.vue",
+      "^MemberList$": "@/components/MemberList/MemberList.vue",
+      "^OrderList$": "@/components/OrderList/OrderList.vue"
     }
   },
   "pages": [
@@ -26,9 +31,9 @@
       }
     },
     {
-      "path": "pages/order/list",
+      "path": "pages/duty/index",
       "style": {
-        "navigationBarTitleText": "订单",
+        "navigationBarTitleText": "今日分工",
         "enablePullDownRefresh": true
       }
     },
@@ -56,6 +61,13 @@
       "path": "pages/cart/index",
       "style": {
         "navigationBarTitleText": "购物车"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "点餐记录",
+        "enablePullDownRefresh": true
       }
     },
     {
@@ -166,10 +178,10 @@
         "text": "点餐"
       },
       {
-        "pagePath": "pages/order/list",
+        "pagePath": "pages/duty/index",
         "iconPath": "static/tabbar/order.png",
         "selectedIconPath": "static/tabbar/order-active.png",
-        "text": "订单"
+        "text": "分工"
       },
       {
         "pagePath": "pages/family/index",

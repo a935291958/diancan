@@ -1,12 +1,23 @@
 <template>
   <view class="menu-page">
-    <view class="menu-page__search">
+    <view class="menu-page__top">
+      <view class="meal-tabs">
+        <view
+          v-for="item in MEAL_TYPES"
+          :key="item.value"
+          class="meal-tabs__item"
+          :class="{ 'meal-tabs__item--on': draftStore.meal_type === item.value }"
+          @click="draftStore.setMealType(item.value)"
+        >
+          {{ item.name }}
+        </view>
+      </view>
       <u-search
         v-model="keyword"
         placeholder="搜索家常菜"
         :show-action="false"
-        @search="loadDishList"
-        @clear="loadDishList"
+        @search="loadFoodList"
+        @clear="loadFoodList"
       />
     </view>
 
@@ -14,118 +25,180 @@
       <scroll-view class="menu-page__cate" scroll-y>
         <view
           v-for="item in categoryList"
-          :key="item.id"
+          :key="item"
           class="cate-item"
-          :class="{ 'cate-item--active': item.id === activeCategoryId }"
-          @click="selectCategory(item.id)"
+          :class="{ 'cate-item--active': item === activeCategory }"
+          @click="selectCategory(item)"
         >
-          {{ item.name }}
+          {{ item }}
         </view>
       </scroll-view>
 
       <scroll-view class="menu-page__list" scroll-y>
         <PageLoading v-if="loading" />
-        <PageEmpty v-else-if="!dishList.length" text="暂无菜品" />
+        <PageEmpty v-else-if="!foodList.length" text="暂无菜品，先去添加" show-action action-text="去添加" @action="goDishManage" />
         <view v-else>
-          <DishCard
-            v-for="item in dishList"
+          <FoodCard
+            v-for="item in foodList"
             :key="item.id"
             class="mt-24"
-            :name="item.name"
-            :desc="item.description"
-            :price="item.price"
-            :cover="item.cover"
-            @click="goDetail(item.id)"
-            @add="handleAddCart(item)"
+            :food="item"
+            :members="familyStore.memberList"
+            :hint="specHint(item)"
+            show-check
+            :checked="draftStore.isSelected(item.id)"
+            @click="openSpec(item)"
+            @select="openSpec(item)"
           />
         </view>
         <view class="safe-spacer" />
       </scroll-view>
     </view>
 
-    <view class="menu-page__cart safe-bottom" @click="goCart">
-      <u-icon name="shopping-cart" color="#ffffff" size="22" />
-      <text>购物车</text>
+    <view class="menu-page__bar safe-bottom">
+      <text>已选 {{ draftStore.selectedCount }} 道 · {{ mealLabel }}</text>
+      <u-button type="primary" size="small" shape="circle" text="去提交" :disabled="!draftStore.hasItems" @click="goConfirm" />
     </view>
+
+    <SpecPicker
+      :show="pickerShow"
+      :food-name="currentFood.food_name"
+      :specs="currentFood.specs || []"
+      :value="currentSelected"
+      @update:show="pickerShow = $event"
+      @confirm="onSpecConfirm"
+    />
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
-import { getCategoryList, getDishList } from '@/api/dish'
-import { addCartItem } from '@/api/menu'
+import { getFoodDetail, getFoodList } from '@/api/food'
+import { FOOD_CATEGORIES, MEAL_TYPES } from '@/config/constants'
 import { useFamilyStore } from '@/store/modules/family'
+import { useOrderDraftStore } from '@/store/modules/order-draft'
+import { formatSelectSpec, groupSpecs, parseSelectSpec, stringifySelectSpec, unwrapList } from '@/utils/biz'
+import { ensureFamily } from '@/utils/family-guard'
+import { formatDay, getDefaultMealType } from '@/utils/date'
 import { useAuthGuard } from '@/utils/use-auth-guard'
 
 useAuthGuard()
 
 const familyStore = useFamilyStore()
+const draftStore = useOrderDraftStore()
 const keyword = ref('')
 const loading = ref(false)
-const categoryList = ref([{ id: '', name: '全部' }])
-const activeCategoryId = ref('')
-const dishList = ref([])
+const foodList = ref([])
+const activeCategory = ref('全部')
+const pickerShow = ref(false)
+const currentFood = ref({})
+const currentSelected = ref({})
 
-async function loadCategories() {
-  try {
-    const data = await getCategoryList({ familyId: familyStore.currentFamilyId }, { loading: false, showError: false })
-    const list = Array.isArray(data) ? data : data?.list || []
-    categoryList.value = [{ id: '', name: '全部' }, ...list]
-  } catch (error) {
-    categoryList.value = [{ id: '', name: '全部' }]
-  }
+const categoryList = computed(() => {
+  const fromData = [...new Set(foodList.value.map((item) => item.category).filter(Boolean))]
+  const merged = ['全部', ...FOOD_CATEGORIES, ...fromData]
+  return [...new Set(merged)]
+})
+
+const mealLabel = computed(() => MEAL_TYPES.find((item) => item.value === draftStore.meal_type)?.name || '用餐')
+
+function specHint(item) {
+  const selected = draftStore.items.find((row) => Number(row.food_id) === Number(item.id))
+  if (selected) return formatSelectSpec(selected.select_spec)
+  const groups = groupSpecs(item.specs || [])
+  if (!groups.length) return item.category || '默认规格'
+  return groups.map((row) => row.spec_name).join(' / ')
 }
 
-async function loadDishList() {
+async function loadFoodList() {
+  if (!ensureFamily()) {
+    loading.value = false
+    uni.stopPullDownRefresh()
+    return
+  }
   loading.value = true
   try {
-    const data = await getDishList(
+    const data = await getFoodList(
       {
-        familyId: familyStore.currentFamilyId,
-        categoryId: activeCategoryId.value,
+        family_id: familyStore.currentFamilyId,
+        category: activeCategory.value === '全部' ? '' : activeCategory.value,
         keyword: keyword.value,
       },
       { loading: false }
     )
-    dishList.value = Array.isArray(data) ? data : data?.list || []
+    foodList.value = unwrapList(data)
   } catch (error) {
-    dishList.value = []
+    foodList.value = []
   } finally {
     loading.value = false
     uni.stopPullDownRefresh()
   }
 }
 
-onShow(async () => {
-  await loadCategories()
-  await loadDishList()
+onShow(() => {
+  if (!draftStore.order_date) draftStore.setOrderDate(formatDay(new Date()))
+  if (!draftStore.meal_type) draftStore.setMealType(getDefaultMealType())
+  familyStore.fetchMembers()
+  loadFoodList()
 })
 
 onPullDownRefresh(() => {
-  loadDishList()
+  loadFoodList()
 })
 
-function selectCategory(id) {
-  activeCategoryId.value = id
-  loadDishList()
+function selectCategory(name) {
+  activeCategory.value = name
+  loadFoodList()
 }
 
-function goDetail(id) {
-  uni.navigateTo({ url: `/pages/dish/detail?id=${id}` })
+function goDishManage() {
+  uni.navigateTo({ url: '/pages/dish/list' })
 }
 
-function goCart() {
-  uni.navigateTo({ url: '/pages/cart/index' })
-}
-
-async function handleAddCart(item) {
-  try {
-    await addCartItem({ dishId: item.id, count: 1 })
-    uni.showToast({ title: '已加入购物车', icon: 'success' })
-  } catch (error) {
-    // 请求层已提示
+async function openSpec(food) {
+  if (!ensureFamily()) return
+  if (draftStore.isSelected(food.id)) {
+    draftStore.removeItem(food.id)
+    return
   }
+  let detail = food
+  if (!food.specs) {
+    try {
+      detail = (await getFoodDetail(food.id, { loading: true })) || food
+    } catch (error) {
+      detail = food
+    }
+  }
+  currentFood.value = detail
+  const exist = draftStore.items.find((row) => Number(row.food_id) === Number(food.id))
+  currentSelected.value = parseSelectSpec(exist?.select_spec)
+  const groups = groupSpecs(detail.specs || [])
+  if (!groups.length) {
+    onSpecConfirm({})
+    return
+  }
+  pickerShow.value = true
+}
+
+function onSpecConfirm(selected) {
+  const food = currentFood.value
+  draftStore.upsertItem({
+    food_id: food.id,
+    food_name: food.food_name,
+    food_img: food.food_img,
+    specs: food.specs || [],
+    select_spec: stringifySelectSpec(selected),
+    cook_uid: 0,
+  })
+}
+
+function goConfirm() {
+  if (!draftStore.hasItems) {
+    uni.showToast({ title: '请先勾选菜品', icon: 'none' })
+    return
+  }
+  uni.navigateTo({ url: '/pages/order/confirm' })
 }
 </script>
 
@@ -136,7 +209,7 @@ async function handleAddCart(item) {
   flex-direction: column;
   background: $bg-page;
 
-  &__search {
+  &__top {
     padding: 16rpx 24rpx;
     background: $bg-white;
   }
@@ -148,33 +221,53 @@ async function handleAddCart(item) {
   }
 
   &__cate {
-    width: 180rpx;
+    width: 160rpx;
     background: #f3f4f6;
   }
 
   &__list {
     flex: 1;
-    padding: 0 20rpx 140rpx;
+    padding: 0 20rpx 160rpx;
   }
 
-  &__cart {
+  &__bar {
     position: fixed;
-    right: 32rpx;
-    bottom: calc(40rpx + #{$safe-bottom});
+    left: 0;
+    right: 0;
+    bottom: 0;
     display: flex;
     align-items: center;
-    gap: 8rpx;
-    padding: 18rpx 28rpx;
+    justify-content: space-between;
+    padding: 16rpx 24rpx;
+    background: $bg-white;
+    box-shadow: 0 -4rpx 16rpx rgba(0, 0, 0, 0.04);
+  }
+}
+
+.meal-tabs {
+  display: flex;
+  gap: 12rpx;
+  margin-bottom: 16rpx;
+
+  &__item {
+    flex: 1;
+    text-align: center;
+    padding: 12rpx 0;
     border-radius: 999rpx;
-    background: $color-primary;
-    color: #fff;
+    background: $bg-page;
     font-size: 26rpx;
-    box-shadow: 0 8rpx 24rpx rgba(255, 107, 53, 0.35);
+    color: $text-content;
+
+    &--on {
+      background: $color-primary-light;
+      color: $color-primary;
+      font-weight: 600;
+    }
   }
 }
 
 .cate-item {
-  padding: 28rpx 16rpx;
+  padding: 28rpx 12rpx;
   text-align: center;
   font-size: 26rpx;
   color: $text-content;

@@ -88,3 +88,18 @@ export function getTodayText() {
   const now = new Date()
   return `${formatDay(now)} ${getWeekday(now)}`
 }
+
+/** 按当前小时给出默认用餐时段（早/中/晚） */
+export function getDefaultMealType() {
+  const hour = new Date().getHours()
+  if (hour < 10) return '早'
+  if (hour < 16) return '中'
+  return '晚'
+}
+
+export function addDays(value, days = 0) {
+  const date = toDate(value) || new Date()
+  const next = new Date(date.getTime())
+  next.setDate(next.getDate() + days)
+  return formatDay(next)
+}

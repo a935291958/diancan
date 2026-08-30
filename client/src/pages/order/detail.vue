@@ -1,27 +1,25 @@
 <template>
   <view class="page-wrap page-pad">
     <PageLoading v-if="loading" />
-    <PageEmpty v-else-if="!detail.id" text="订单不存在" />
+    <PageEmpty v-else-if="!detail.id" text="点餐记录不存在" />
     <view v-else>
       <view class="card block">
         <view class="flex-between">
-          <text class="block__title">{{ detail.orderNo || detail.id }}</text>
-          <u-tag :text="statusText" size="mini" type="primary" plain />
+          <text class="block__title">{{ foodNameOf(detail) }}</text>
+          <u-tag :text="statusText" size="mini" :type="statusType" plain />
         </view>
-        <text class="text-tips mt-12">下单时间 {{ formatDateTime(detail.createdAt) }}</text>
+        <text class="text-tips mt-12">{{ detail.meal_type }} · {{ detail.order_date }}</text>
+        <text class="text-tips mt-12">规格 {{ formatSelectSpec(detail.select_spec) }}</text>
+        <text class="text-tips mt-12">点餐人 {{ orderUserName }}</text>
+        <text class="text-tips mt-12">烹饪 {{ cookName }}</text>
       </view>
 
-      <view class="card block mt-24">
-        <text class="block__title">菜品明细</text>
-        <view v-for="item in detail.items || []" :key="item.id" class="flex-between mt-24">
-          <text>{{ item.name }} × {{ item.count }}</text>
-          <text class="text-primary">{{ formatPrice(item.price) }}</text>
-        </view>
+      <view v-if="Number(detail.status) === 1" class="mt-24">
+        <u-button type="primary" text="开始制作" @click="changeStatus(2)" />
+        <u-button class="mt-24" type="error" plain text="取消点餐" @click="changeStatus(4)" />
       </view>
-
-      <view v-if="detail.status === 'pending'" class="mt-24">
-        <u-button type="primary" text="确认接单" @click="handleConfirm" />
-        <u-button class="mt-24" type="error" plain text="取消订单" @click="handleCancel" />
+      <view v-else-if="Number(detail.status) === 2" class="mt-24">
+        <u-button type="primary" text="标记完成" @click="changeStatus(3)" />
       </view>
     </view>
   </view>
@@ -30,16 +28,22 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { cancelOrder, confirmOrder, getOrderDetail } from '@/api/order'
+import { getOrderDetail, updateOrderStatus } from '@/api/order'
 import { ORDER_STATUS_MAP } from '@/config/constants'
-import { formatDateTime } from '@/utils/date'
-import { formatPrice } from '@/utils/data'
+import { foodNameOf, formatSelectSpec } from '@/utils/biz'
 
 const loading = ref(false)
 const detail = ref({})
 const orderId = ref('')
 
 const statusText = computed(() => ORDER_STATUS_MAP[detail.value.status]?.text || '未知')
+const statusType = computed(() => ORDER_STATUS_MAP[detail.value.status]?.type || 'info')
+const orderUserName = computed(
+  () => detail.value.order_nickname || detail.value.order_user?.nickname || `#${detail.value.order_uid || '-'}`
+)
+const cookName = computed(
+  () => detail.value.cook_nickname || detail.value.cook?.nickname || (detail.value.cook_uid ? `#${detail.value.cook_uid}` : '未指派')
+)
 
 async function loadDetail() {
   if (!orderId.value) return
@@ -58,15 +62,9 @@ onLoad((query) => {
   loadDetail()
 })
 
-async function handleConfirm() {
-  await confirmOrder(orderId.value)
-  uni.showToast({ title: '已确认', icon: 'success' })
-  loadDetail()
-}
-
-async function handleCancel() {
-  await cancelOrder(orderId.value)
-  uni.showToast({ title: '已取消', icon: 'none' })
+async function changeStatus(status) {
+  await updateOrderStatus(orderId.value, status)
+  uni.showToast({ title: '已更新', icon: 'success' })
   loadDetail()
 }
 </script>
@@ -76,7 +74,7 @@ async function handleCancel() {
   padding: 28rpx;
 
   &__title {
-    font-size: 30rpx;
+    font-size: 32rpx;
     font-weight: 600;
   }
 }

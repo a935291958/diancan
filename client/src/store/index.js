@@ -24,3 +24,4 @@ pinia.use(
 export default pinia
 export { useUserStore } from './modules/user'
 export { useFamilyStore } from './modules/family'
+export { useOrderDraftStore } from './modules/order-draft'

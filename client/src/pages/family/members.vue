@@ -1,24 +1,22 @@
 <template>
   <view class="page-wrap page-pad">
     <PageLoading v-if="loading" />
-    <PageEmpty v-else-if="!memberList.length" text="暂无成员" />
-    <view v-else class="card">
-      <view v-for="item in memberList" :key="item.id" class="member">
-        <u-avatar :src="item.avatar" size="40" />
-        <view class="flex-1">
-          <text class="member__name">{{ item.nickname || '家庭成员' }}</text>
-          <text class="text-tips">{{ roleText(item.role) }}</text>
-        </view>
-      </view>
-    </view>
+    <MemberList
+      v-else
+      :list="memberList"
+      :admin-uid="familyStore.familyInfo.admin_uid"
+      :show-remove="familyStore.isAdmin"
+      @remove="handleRemove"
+    />
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { FAMILY_ROLE_MAP } from '@/config/constants'
+import { removeFamilyMember } from '@/api/family'
 import { useFamilyStore } from '@/store/modules/family'
+import { confirmDialog, memberNameOf } from '@/utils/biz'
 
 const familyStore = useFamilyStore()
 const loading = ref(false)
@@ -39,21 +37,15 @@ onShow(() => {
   loadMembers()
 })
 
-function roleText(role) {
-  return FAMILY_ROLE_MAP[role] || '成员'
-}
-</script>
-
-<style lang="scss" scoped>
-.member {
-  display: flex;
-  align-items: center;
-  gap: 20rpx;
-  padding: 24rpx;
-
-  &__name {
-    display: block;
-    font-weight: 600;
+async function handleRemove(item) {
+  const ok = await confirmDialog(`确认移除「${memberNameOf(item)}」？`)
+  if (!ok) return
+  try {
+    await removeFamilyMember(item.id)
+    uni.showToast({ title: '已移除', icon: 'success' })
+    loadMembers()
+  } catch (error) {
+    console.warn('[family] 移除成员失败', error)
   }
 }
-</style>
+</script>

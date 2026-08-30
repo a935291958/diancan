@@ -3,42 +3,41 @@
     <text class="page-title">今日菜单</text>
     <PageLoading v-if="loading" />
     <PageEmpty
-      v-else-if="!dishList.length"
-      text="还没有安排今日菜单"
+      v-else-if="!orderList.length"
+      text="还没有今日点餐"
       show-action
       action-text="去点餐"
       @action="goMenu"
     />
-    <DishCard
-      v-for="item in dishList"
-      :key="item.id"
-      class="mt-24"
-      :name="item.name"
-      :desc="item.description"
-      :price="item.price"
-      :cover="item.cover"
-      @click="goDetail(item.id)"
-    />
+    <OrderList v-else class="mt-24" :list="orderList" group-by-meal @click="goDetail" />
   </view>
 </template>
 
 <script setup>
 import { ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
-import { getTodayMenu } from '@/api/menu'
+import { getOrderList, getTodayOrders } from '@/api/order'
 import { useFamilyStore } from '@/store/modules/family'
+import { unwrapList } from '@/utils/biz'
+import { formatDay } from '@/utils/date'
 
 const familyStore = useFamilyStore()
 const loading = ref(false)
-const dishList = ref([])
+const orderList = ref([])
 
 async function loadList() {
   loading.value = true
   try {
-    const data = await getTodayMenu({ familyId: familyStore.currentFamilyId }, { loading: false })
-    dishList.value = Array.isArray(data) ? data : data?.list || []
+    const params = { family_id: familyStore.currentFamilyId, order_date: formatDay(new Date()) }
+    let data
+    try {
+      data = await getTodayOrders(params, { loading: false })
+    } catch (error) {
+      data = await getOrderList(params, { loading: false, showError: false })
+    }
+    orderList.value = unwrapList(data)
   } catch (error) {
-    dishList.value = []
+    orderList.value = []
   } finally {
     loading.value = false
     uni.stopPullDownRefresh()
@@ -57,8 +56,8 @@ function goMenu() {
   uni.switchTab({ url: '/pages/menu/index' })
 }
 
-function goDetail(id) {
-  uni.navigateTo({ url: `/pages/dish/detail?id=${id}` })
+function goDetail(item) {
+  uni.navigateTo({ url: `/pages/order/detail?id=${item.id}` })
 }
 </script>
 
@@ -67,5 +66,6 @@ function goDetail(id) {
   display: block;
   font-size: 32rpx;
   font-weight: 700;
+  margin-bottom: 16rpx;
 }
 </style>

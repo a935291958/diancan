@@ -21,3 +21,16 @@ export function assertRequired(value, message = '请填写完整信息') {
   }
   return true
 }
+
+/** 家庭邀请码：6 位字母或数字 */
+export function isInviteCode(value) {
+  return /^[A-Za-z0-9]{6}$/.test(String(value || '').trim())
+}
+
+export function assertInviteCode(value) {
+  if (!isInviteCode(value)) {
+    uni.showToast({ title: '请输入6位邀请码', icon: 'none' })
+    return false
+  }
+  return true
+}

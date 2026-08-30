@@ -13,7 +13,7 @@
         <u-cell-group :border="false">
           <u-cell title="个人资料" is-link url="/pages/mine/profile" />
           <u-cell title="菜品管理" is-link url="/pages/dish/list" />
-          <u-cell title="分类管理" is-link url="/pages/category/index" />
+          <u-cell title="点餐记录" is-link url="/pages/order/list" />
           <u-cell title="设置" is-link url="/pages/mine/settings" />
         </u-cell-group>
       </view>

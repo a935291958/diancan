@@ -1,33 +1,44 @@
 /**
- * 全局业务常量
+ * 全局业务常量 —— 与数据表 jt_jiating_* 字段、枚举保持一致
  */
 
-/** 本地缓存 Key，避免魔法字符串散落各处 */
 export const STORAGE_KEYS = {
   TOKEN: 'diancan_token',
   USER_STORE: 'diancan_user',
   FAMILY_STORE: 'diancan_family',
 }
 
-/** 无需登录即可访问的页面（其余页面一律校验 token） */
-export const WHITE_LIST = [
-  '/pages/login/index',
+export const WHITE_LIST = ['/pages/login/index']
+
+/** 点餐状态：order.status tinyint */
+export const ORDER_STATUS = {
+  PENDING: 1,
+  COOKING: 2,
+  DONE: 3,
+  CANCELLED: 4,
+}
+
+export const ORDER_STATUS_MAP = {
+  1: { text: '待制作', type: 'warning' },
+  2: { text: '制作中', type: 'primary' },
+  3: { text: '已完成', type: 'success' },
+  4: { text: '已取消', type: 'info' },
+}
+
+/** 用餐时段：order.meal_type */
+export const MEAL_TYPES = [
+  { name: '早餐', value: '早' },
+  { name: '午餐', value: '中' },
+  { name: '晚餐', value: '晚' },
 ]
 
-/** 订单状态文案映射，页面展示统一从此读取 */
-export const ORDER_STATUS_MAP = {
-  pending: { text: '待确认', type: 'warning' },
-  cooking: { text: '制作中', type: 'primary' },
-  done: { text: '已完成', type: 'success' },
-  cancelled: { text: '已取消', type: 'info' },
-}
+/** 菜品分类（food.category 为字符串，非独立表） */
+export const FOOD_CATEGORIES = ['家常菜', '汤羹', '主食', '凉菜', '热菜', '甜品', '其他']
 
-/** 家庭成员角色 */
-export const FAMILY_ROLE_MAP = {
-  owner: '家长',
-  admin: '管理员',
-  member: '成员',
-}
+/** 规格预设：food_spec.spec_name / spec_value */
+export const SPEC_PRESETS = [
+  { spec_name: '辣度', values: ['不辣', '微辣', '中辣', '特辣'] },
+  { spec_name: '分量', values: ['小份', '中份', '大份'] },
+]
 
-/** 默认分页 */
-export const DEFAULT_PAGE_SIZE = 10
+export const DEFAULT_PAGE_SIZE = 20

@@ -10,44 +10,47 @@
       </view>
     </view>
 
+    <view class="quick">
+      <view class="quick__item" @click="goMenu">
+        <text class="quick__num">点</text>
+        <text>去点餐</text>
+      </view>
+      <view class="quick__item" @click="goDuty">
+        <text class="quick__num">{{ todayCount }}</text>
+        <text>今日点餐</text>
+      </view>
+      <view class="quick__item" @click="goDish">
+        <text class="quick__num">菜</text>
+        <text>菜品管理</text>
+      </view>
+    </view>
+
     <view class="section">
       <view class="flex-between">
-        <text class="section__title">今日菜单</text>
-        <text class="text-primary" @click="goToday">查看全部</text>
+        <text class="section__title">今日清单</text>
+        <text class="text-primary" @click="goDuty">查看分工</text>
       </view>
-
       <PageLoading v-if="loading" />
       <PageEmpty
-        v-else-if="!dishList.length"
-        text="今天还没有安排菜单"
+        v-else-if="!orderList.length"
+        text="今天还没有点餐"
         show-action
         action-text="去点餐"
         @action="goMenu"
       />
-      <view v-else class="dish-list">
-        <DishCard
-          v-for="item in dishList"
-          :key="item.id"
-          class="mt-24"
-          :name="item.name"
-          :desc="item.description"
-          :price="item.price"
-          :cover="item.cover"
-          @click="goDishDetail(item.id)"
-          @add="handleAddCart(item)"
-        />
-      </view>
+      <OrderList v-else :list="orderList" @click="goDetail" />
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { onPullDownRefresh, onShow } from '@dcloudio/uni-app'
-import { addCartItem, getTodayMenu } from '@/api/menu'
+import { getOrderList, getTodayOrders } from '@/api/order'
 import { useUserStore } from '@/store/modules/user'
 import { useFamilyStore } from '@/store/modules/family'
-import { getTodayText } from '@/utils/date'
+import { unwrapList } from '@/utils/biz'
+import { formatDay, getTodayText } from '@/utils/date'
 import { useAuthGuard } from '@/utils/use-auth-guard'
 
 useAuthGuard()
@@ -55,16 +58,27 @@ useAuthGuard()
 const userStore = useUserStore()
 const familyStore = useFamilyStore()
 const loading = ref(false)
-const dishList = ref([])
+const orderList = ref([])
 const todayText = getTodayText()
 
-async function loadTodayMenu() {
+const todayCount = computed(() => orderList.value.length)
+
+async function loadToday() {
   loading.value = true
   try {
-    const data = await getTodayMenu({ familyId: familyStore.currentFamilyId }, { loading: false })
-    dishList.value = Array.isArray(data) ? data : data?.list || []
+    const params = {
+      family_id: familyStore.currentFamilyId,
+      order_date: formatDay(new Date()),
+    }
+    let data
+    try {
+      data = await getTodayOrders(params, { loading: false, showError: false })
+    } catch (error) {
+      data = await getOrderList(params, { loading: false, showError: false })
+    }
+    orderList.value = unwrapList(data)
   } catch (error) {
-    dishList.value = []
+    orderList.value = []
   } finally {
     loading.value = false
     uni.stopPullDownRefresh()
@@ -72,32 +86,27 @@ async function loadTodayMenu() {
 }
 
 onShow(() => {
-  loadTodayMenu()
+  loadToday()
 })
 
 onPullDownRefresh(() => {
-  loadTodayMenu()
+  loadToday()
 })
-
-function goToday() {
-  uni.navigateTo({ url: '/pages/today/index' })
-}
 
 function goMenu() {
   uni.switchTab({ url: '/pages/menu/index' })
 }
 
-function goDishDetail(id) {
-  uni.navigateTo({ url: `/pages/dish/detail?id=${id}` })
+function goDuty() {
+  uni.switchTab({ url: '/pages/duty/index' })
 }
 
-async function handleAddCart(item) {
-  try {
-    await addCartItem({ dishId: item.id, count: 1 })
-    uni.showToast({ title: '已加入购物车', icon: 'success' })
-  } catch (error) {
-    // 错误已由请求层提示
-  }
+function goDish() {
+  uni.navigateTo({ url: '/pages/dish/list' })
+}
+
+function goDetail(item) {
+  uni.navigateTo({ url: `/pages/order/detail?id=${item.id}` })
 }
 </script>
 
@@ -121,6 +130,31 @@ async function handleAddCart(item) {
   }
 }
 
+.quick {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 24rpx;
+
+  &__item {
+    flex: 1;
+    background: $bg-white;
+    border-radius: $radius-md;
+    padding: 24rpx 12rpx;
+    text-align: center;
+    font-size: 24rpx;
+    color: $text-content;
+    box-shadow: $shadow-card;
+  }
+
+  &__num {
+    display: block;
+    margin-bottom: 8rpx;
+    font-size: 36rpx;
+    font-weight: 700;
+    color: $color-primary;
+  }
+}
+
 .section {
   margin-top: 32rpx;
 
@@ -128,9 +162,5 @@ async function handleAddCart(item) {
     font-size: 32rpx;
     font-weight: 600;
   }
-}
-
-.dish-list {
-  margin-top: 8rpx;
 }
 </style>

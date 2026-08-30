@@ -3,6 +3,5 @@
  */
 export * from './user'
 export * from './family'
-export * from './dish'
+export * from './food'
 export * from './order'
-export * from './menu'

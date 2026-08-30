@@ -3,7 +3,13 @@
     <view class="card form-card">
       <u-form label-width="80">
         <u-form-item label="邀请码" required>
-          <u-input v-model="inviteCode" placeholder="请输入家庭邀请码" border="none" maxlength="16" />
+          <u-input
+            v-model="inviteCode"
+            maxlength="6"
+            placeholder="请输入6位邀请码"
+            border="none"
+            @blur="inviteCode = inviteCode.trim().toUpperCase()"
+          />
         </u-form-item>
       </u-form>
     </view>
@@ -16,19 +22,22 @@
 <script setup>
 import { ref } from 'vue'
 import { useFamilyStore } from '@/store/modules/family'
-import { assertRequired } from '@/utils/validate'
+import { assertInviteCode } from '@/utils/validate'
 
 const familyStore = useFamilyStore()
 const inviteCode = ref('')
 const submitting = ref(false)
 
 async function handleSubmit() {
-  if (!assertRequired(inviteCode.value, '请输入邀请码')) return
+  const code = inviteCode.value.trim()
+  if (!assertInviteCode(code)) return
   submitting.value = true
   try {
-    await familyStore.join(inviteCode.value.trim())
+    await familyStore.join(code)
     uni.showToast({ title: '加入成功', icon: 'success' })
     setTimeout(() => uni.navigateBack(), 400)
+  } catch (error) {
+    console.warn('[family] 加入失败', error)
   } finally {
     submitting.value = false
   }

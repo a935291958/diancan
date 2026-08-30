@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 当前用户：GET /user/info 、 PUT /user/profile.
+ * 模块：用户 — GET/PUT /user/info|/profile，REST 别名 /v1/user
  */
 
 namespace App\Controller;

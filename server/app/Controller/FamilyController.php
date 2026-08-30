@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 家庭模块，路径前缀 /v1/family.
+ * 模块：家庭 — /v1/family 创建/加入/退出/成员 CRUD.
  */
 
 namespace App\Controller;

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 菜品 / 规格，路径 /v1/food 、 /v1/food-spec.
+ * 模块：菜品 — /v1/food 增删改查 + /v1/food/{id}/specs 一对多规格.
  */
 
 namespace App\Controller;

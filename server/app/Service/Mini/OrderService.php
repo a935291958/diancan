@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 /**
- * 点餐：提交/取消、烹饪指派、状态流转。select_spec 入库 JSON，出库对象.
+ * 模块：点餐 — 提交/批量/改删查。规格 JSON 解析与存储。
+ * 当日看板、指派、状态流转见 DutyService。
  */
 
 namespace App\Service\Mini;
@@ -11,6 +12,7 @@ use App\Exception\BusinessException;
 use App\Http\Common\ResultCode;
 use App\Model\Mini\Food;
 use App\Model\Mini\Order;
+use App\Service\Mini\Concern\FormatsOrder;
 use App\Support\Formatter;
 use App\Support\Time;
 use Hyperf\DbConnection\Db;
@@ -19,10 +21,13 @@ use Psr\Log\LoggerInterface;
 
 class OrderService extends AbstractMiniService
 {
+    use FormatsOrder;
+
     private LoggerInterface $logger;
 
-    public function __construct(LoggerFactory $loggerFactory)
-    {
+    public function __construct(
+        LoggerFactory $loggerFactory
+    ) {
         $this->logger = $loggerFactory->get('api');
     }
 
@@ -47,21 +52,6 @@ class OrderService extends AbstractMiniService
     }
 
     /**
-     * 当日清单，返回数组供 unwrapList 直接使用.
-     *
-     * @param  array<string, mixed>  $params
-     * @return array<int, array<string, mixed>>
-     */
-    public function today(array $params): array
-    {
-        $familyId = $this->requireFamilyId(isset($params['family_id']) ? (int) $params['family_id'] : null);
-        $params['order_date'] = (string) ($params['order_date'] ?? Time::today());
-        $rows = $this->buildQuery($familyId, $params)->get();
-
-        return $rows->map(fn (Order $order) => $this->formatOrder($order))->all();
-    }
-
-    /**
      * @return array<string, mixed>
      */
     public function detail(int $id): array
@@ -82,8 +72,6 @@ class OrderService extends AbstractMiniService
     }
 
     /**
-     * 批量提交（事务），与前端 createOrders 的 items 结构一致.
-     *
      * @param  array<string, mixed>  $payload
      * @return array<int, array<string, mixed>>
      */
@@ -135,38 +123,15 @@ class OrderService extends AbstractMiniService
             $order->cook_uid = $cookUid;
         }
         if (isset($payload['status'])) {
-            $this->applyStatus($order, (int) $payload['status']);
+            $status = (int) $payload['status'];
+            if (! Order::canTransit((int) $order->status, $status)) {
+                throw new BusinessException(ResultCode::BAD_REQUEST, '当前状态不允许该操作');
+            }
+            $order->status = $status;
         }
         $order->save();
 
         return $this->formatOrder($order->refresh()->load(['food', 'orderUser', 'cook']));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function updateStatus(int $id, int $status): array
-    {
-        $order = $this->mustOrder($id);
-        $this->applyStatus($order, $status);
-        $order->save();
-        $this->logger->info('mini.order.status', ['id' => $id, 'status' => $status, 'uid' => $this->uid()]);
-
-        return $this->formatOrder($order);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function assignCook(int $id, int $cookUid): array
-    {
-        $order = $this->mustOrder($id);
-        $this->assertMember((int) $order->family_id, $cookUid);
-        $order->cook_uid = $cookUid;
-        $order->save();
-        $this->logger->info('mini.order.cook', ['id' => $id, 'cook_uid' => $cookUid, 'uid' => $this->uid()]);
-
-        return $this->formatOrder($order->load(['food', 'orderUser', 'cook']));
     }
 
     public function delete(int $id): void
@@ -207,14 +172,6 @@ class OrderService extends AbstractMiniService
         return $order;
     }
 
-    private function applyStatus(Order $order, int $status): void
-    {
-        if (! Order::canTransit((int) $order->status, $status)) {
-            throw new BusinessException(ResultCode::BAD_REQUEST, '当前状态不允许该操作');
-        }
-        $order->status = $status;
-    }
-
     /**
      * @param  array<string, mixed>  $params
      */
@@ -236,77 +193,5 @@ class OrderService extends AbstractMiniService
         }
 
         return $query;
-    }
-
-    private function mustOrder(int $id): Order
-    {
-        $order = Order::query()->with(['food', 'orderUser', 'cook'])->find($id);
-        if (! $order instanceof Order) {
-            throw new BusinessException(ResultCode::NOT_FOUND, '点餐记录不存在');
-        }
-
-        return $order;
-    }
-
-    /**
-     * 对象 / JSON 字符串统一写成 JSON 文本入库.
-     */
-    private function encodeSpec(mixed $value): string
-    {
-        if ($value === null || $value === '') {
-            return '{}';
-        }
-        if (is_array($value)) {
-            $json = json_encode($value, JSON_UNESCAPED_UNICODE);
-
-            return is_string($json) ? $json : '{}';
-        }
-        if (is_string($value)) {
-            $decoded = json_decode($value, true);
-
-            return is_array($decoded) ? $value : '{}';
-        }
-
-        return '{}';
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function formatOrder(Order $order): array
-    {
-        $data = Formatter::row($order);
-        $spec = json_decode((string) $order->select_spec, true);
-        $data['select_spec'] = is_array($spec) ? $spec : [];
-
-        $food = $order->food;
-        $data['food_name'] = $food?->food_name ?? '';
-        $data['food_img'] = $food?->food_img ?? '';
-        $data['cook_uids'] = $food?->cook_uids ?? '';
-        $data['food'] = $food ? [
-            'id' => (int) $food->id,
-            'food_name' => $food->food_name,
-            'food_img' => $food->food_img,
-            'cook_uids' => $food->cook_uids,
-            'category' => $food->category,
-        ] : null;
-
-        $orderUser = $order->orderUser;
-        $data['order_nickname'] = $orderUser?->nickname ?? '';
-        $data['order_user'] = $orderUser ? [
-            'id' => (int) $orderUser->id,
-            'nickname' => $orderUser->nickname,
-            'avatar' => $orderUser->avatar,
-        ] : null;
-
-        $cook = $order->cook;
-        $data['cook_nickname'] = $cook?->nickname ?? '';
-        $data['cook'] = $cook ? [
-            'id' => (int) $cook->id,
-            'nickname' => $cook->nickname,
-            'avatar' => $cook->avatar,
-        ] : null;
-
-        return $data;
     }
 }

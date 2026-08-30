@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 /**
- * 路由定义。
+ * 小程序 REST 路由。后台 /admin/* 由注解注册。
+ * 中间件：Token 鉴权 -> 家庭隔离 -> 防重复提交 -> 访问日志。
  *
- * 后台 MineAdmin 接口由 Controller 注解扫描注册（/admin/*）。
- * 小程序接口集中写在此处，便于 Cursor 对照 client/src/api 迭代。
- *
- * 中间件顺序：Token 鉴权 -> 家庭隔离 -> 防重复提交。
+ * UniApp 对接：/auth/wx-login、/user/*、/v1/family|food|order|upload
+ * 分工独立 REST：/v1/duty/* ；同时兼容 /v1/order/today|/status|/cook
  */
 use App\Controller\AuthController;
+use App\Controller\DutyController;
 use App\Controller\FamilyController;
 use App\Controller\FoodController;
 use App\Controller\OrderController;
@@ -46,6 +46,8 @@ $miniMiddleware = [
 Router::addGroup('', static function (): void {
     Router::get('/user/info', [UserController::class, 'info']);
     Router::put('/user/profile', [UserController::class, 'profile']);
+    Router::get('/v1/user', [UserController::class, 'info']);
+    Router::put('/v1/user', [UserController::class, 'profile']);
     Router::post('/upload', [UploadController::class, 'upload']);
     Router::post('/v1/upload', [UploadController::class, 'upload']);
 
@@ -74,12 +76,22 @@ Router::addGroup('', static function (): void {
 
     // 点餐
     Router::get('/v1/order/list', [OrderController::class, 'list']);
-    Router::get('/v1/order/today', [OrderController::class, 'today']);
+    Router::get('/v1/order/today', [DutyController::class, 'today']);
     Router::post('/v1/order/batch', [OrderController::class, 'batch']);
-    Router::put('/v1/order/{id:\d+}/status', [OrderController::class, 'updateStatus']);
-    Router::put('/v1/order/{id:\d+}/cook', [OrderController::class, 'assignCook']);
+    Router::put('/v1/order/{id:\d+}/status', [DutyController::class, 'updateStatus']);
+    Router::put('/v1/order/{id:\d+}/cook', [DutyController::class, 'assignCook']);
     Router::get('/v1/order/{id:\d+}', [OrderController::class, 'detail']);
     Router::post('/v1/order', [OrderController::class, 'create']);
     Router::put('/v1/order/{id:\d+}', [OrderController::class, 'update']);
     Router::delete('/v1/order/{id:\d+}', [OrderController::class, 'delete']);
+
+    // 分工（独立 REST；today/status/cook 与上方 UniApp 路径共用 DutyController）
+    Router::get('/v1/duty/today', [DutyController::class, 'today']);
+    Router::get('/v1/duty/mine', [DutyController::class, 'mine']);
+    Router::get('/v1/duty/summary', [DutyController::class, 'summary']);
+    Router::get('/v1/duty/list', [DutyController::class, 'list']);
+    Router::put('/v1/duty/{id:\d+}/status', [DutyController::class, 'updateStatus']);
+    Router::put('/v1/duty/{id:\d+}/cook', [DutyController::class, 'assignCook']);
+    Router::get('/v1/duty/{id:\d+}', [DutyController::class, 'detail']);
+    Router::get('/v1/duty', [DutyController::class, 'list']);
 }, ['middleware' => $miniMiddleware]);

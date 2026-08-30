@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 登录：POST /auth/wx-login（白名单，无需 Token）.
+ * 模块：用户登录 — POST /auth/wx-login（白名单，无需 Token）.
  */
 
 namespace App\Controller;

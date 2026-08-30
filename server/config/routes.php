@@ -15,6 +15,7 @@ use App\Controller\FoodController;
 use App\Controller\OrderController;
 use App\Controller\UploadController;
 use App\Controller\UserController;
+use App\Middleware\ApiLogMiddleware;
 use App\Middleware\FamilyIsolateMiddleware;
 use App\Middleware\RepeatSubmitMiddleware;
 use App\Middleware\TokenAuthMiddleware;
@@ -29,7 +30,9 @@ Router::get('/favicon.ico', static function () {
 });
 
 // 微信登录：白名单，不走 Token 中间件
-Router::post('/auth/wx-login', [AuthController::class, 'wxLogin']);
+Router::post('/auth/wx-login', [AuthController::class, 'wxLogin'], [
+    'middleware' => [ApiLogMiddleware::class],
+]);
 // 上传文件回显，无需登录
 Router::get('/uploads/{path:.+}', [UploadController::class, 'show']);
 
@@ -37,12 +40,14 @@ $miniMiddleware = [
     TokenAuthMiddleware::class,
     FamilyIsolateMiddleware::class,
     RepeatSubmitMiddleware::class,
+    ApiLogMiddleware::class,
 ];
 
 Router::addGroup('', static function (): void {
     Router::get('/user/info', [UserController::class, 'info']);
     Router::put('/user/profile', [UserController::class, 'profile']);
     Router::post('/upload', [UploadController::class, 'upload']);
+    Router::post('/v1/upload', [UploadController::class, 'upload']);
 
     // 家庭：静态路径必须写在 {id} 之前
     Router::get('/v1/family/list', [FamilyController::class, 'list']);
@@ -70,6 +75,7 @@ Router::addGroup('', static function (): void {
     // 点餐
     Router::get('/v1/order/list', [OrderController::class, 'list']);
     Router::get('/v1/order/today', [OrderController::class, 'today']);
+    Router::post('/v1/order/batch', [OrderController::class, 'batch']);
     Router::put('/v1/order/{id:\d+}/status', [OrderController::class, 'updateStatus']);
     Router::put('/v1/order/{id:\d+}/cook', [OrderController::class, 'assignCook']);
     Router::get('/v1/order/{id:\d+}', [OrderController::class, 'detail']);

@@ -38,6 +38,11 @@ class OrderController extends AbstractMiniController
         return $this->success($this->orderService->create($validate->validated()));
     }
 
+    public function batch(OrderValidate $validate): Result
+    {
+        return $this->success($this->orderService->createBatch($validate->validated()));
+    }
+
     public function update(OrderValidate $validate): Result
     {
         return $this->success($this->orderService->update($this->routeId(), $validate->validated()));

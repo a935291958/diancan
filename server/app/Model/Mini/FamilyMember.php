@@ -3,6 +3,7 @@
 declare(strict_types=1);
 /**
  * 家庭成员 jt_jiating_family_member.
+ * 关联：family、user。带 FamilyIsolate，只能看到自己所属家庭的成员行。
  *
  * @property int $id
  * @property int $family_id

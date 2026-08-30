@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 /**
- * 当前登录用户资料.
+ * 当前登录用户资料。phone 前端会提交，用户表无该字段，不落库.
  */
 
 namespace App\Service\Mini;
 
 use App\Context\AuthContext;
+use App\Exception\BusinessException;
+use App\Http\Common\ResultCode;
 use App\Model\Mini\User;
 use App\Support\Formatter;
 
@@ -34,7 +36,11 @@ class UserService extends AbstractMiniService
     {
         $user = AuthContext::mustUser();
         if (isset($payload['nickname'])) {
-            $user->nickname = (string) $payload['nickname'];
+            $nickname = trim((string) $payload['nickname']);
+            if ($nickname === '') {
+                throw new BusinessException(ResultCode::BAD_REQUEST, '请输入昵称');
+            }
+            $user->nickname = $nickname;
         }
         if (isset($payload['avatar'])) {
             $user->avatar = (string) $payload['avatar'];

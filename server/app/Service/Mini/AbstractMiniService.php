@@ -66,14 +66,16 @@ abstract class AbstractMiniService
     }
 
     /**
+     * 小程序列表默认一次拉全量（前端未分页）；显式传 page 时再分页。
+     *
      * @param  array<string, mixed>  $params
      * @return array{0: int, 1: int}
      */
-    protected function pagePair(array $params, int $defaultSize = 20): array
+    protected function pagePair(array $params, int $defaultSize = 200): array
     {
         $page = max(1, (int) ($params['page'] ?? 1));
         $pageSize = (int) ($params['page_size'] ?? $params['pageSize'] ?? $defaultSize);
-        $pageSize = min(100, max(1, $pageSize));
+        $pageSize = min(500, max(1, $pageSize));
 
         return [$page, $pageSize];
     }

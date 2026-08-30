@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 写接口防重复提交。GET/OPTIONS 跳过。
+ * 写接口防重复提交。GET/OPTIONS 跳过；上传接口跳过（multipart 体为空会误伤）.
  */
 
 namespace App\Middleware;
@@ -21,6 +21,11 @@ class RepeatSubmitMiddleware implements MiddlewareInterface
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
+        $path = $request->getUri()->getPath();
+        if (str_contains($path, '/upload')) {
+            return $handler->handle($request);
+        }
+
         $method = strtoupper($request->getMethod());
         $methods = config('mini.repeat_submit.methods', ['POST', 'PUT', 'PATCH', 'DELETE']);
         if (in_array($method, $methods, true)) {

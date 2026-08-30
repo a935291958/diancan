@@ -4,6 +4,9 @@ declare(strict_types=1);
 /**
  * 点餐记录 jt_jiating_order.
  *
+ * 关联：food、family、orderUser（点餐人）、cook（烹饪人）。
+ * select_spec 库内为 JSON 字符串，对外由 Service 解析为对象。
+ *
  * @property int $id
  * @property int $family_id
  * @property int $food_id
@@ -38,6 +41,8 @@ class Order extends AbstractMiniModel
 
     /** 已取消 */
     public const STATUS_CANCELLED = 4;
+
+    public const MEAL_TYPES = ['早', '中', '晚'];
 
     protected string $baseTable = 'order';
 
@@ -81,5 +86,23 @@ class Order extends AbstractMiniModel
     public function cook(): BelongsTo
     {
         return $this->belongsTo(User::class, 'cook_uid', 'id');
+    }
+
+    /**
+     * 允许的状态流转：待制作→制作中/取消，制作中→完成/取消。
+     */
+    public static function canTransit(int $from, int $to): bool
+    {
+        if ($from === $to) {
+            return true;
+        }
+        $map = [
+            self::STATUS_PENDING => [self::STATUS_COOKING, self::STATUS_CANCELLED],
+            self::STATUS_COOKING => [self::STATUS_DONE, self::STATUS_CANCELLED],
+            self::STATUS_DONE => [],
+            self::STATUS_CANCELLED => [],
+        ];
+
+        return in_array($to, $map[$from] ?? [], true);
     }
 }

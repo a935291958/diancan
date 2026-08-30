@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 /**
- * 菜品与规格。查询自动带家庭隔离作用域。
+ * 菜品与规格。列表默认带 specs 一对多，适配菜单页 SpecPicker.
  */
 
 namespace App\Service\Mini;
@@ -12,10 +12,20 @@ use App\Http\Common\ResultCode;
 use App\Model\Mini\Food;
 use App\Model\Mini\FoodSpec;
 use App\Support\Formatter;
+use App\Support\SqlSafe;
 use Hyperf\DbConnection\Db;
+use Hyperf\Logger\LoggerFactory;
+use Psr\Log\LoggerInterface;
 
 class FoodService extends AbstractMiniService
 {
+    private LoggerInterface $logger;
+
+    public function __construct(LoggerFactory $loggerFactory)
+    {
+        $this->logger = $loggerFactory->get('api');
+    }
+
     /**
      * @param  array<string, mixed>  $params
      * @return array{list: array<int, array<string, mixed>>, total: int, page: int, page_size: int}
@@ -25,12 +35,15 @@ class FoodService extends AbstractMiniService
         $familyId = $this->requireFamilyId(isset($params['family_id']) ? (int) $params['family_id'] : null);
         [$page, $pageSize] = $this->pagePair($params);
 
-        $query = Food::query()->where('family_id', $familyId)->orderByDesc('id');
+        $query = Food::query()
+            ->with('specs')
+            ->where('family_id', $familyId)
+            ->orderByDesc('id');
         if (! empty($params['category'])) {
             $query->where('category', (string) $params['category']);
         }
         if (! empty($params['keyword'])) {
-            $kw = '%' . \App\Support\SqlSafe::escapeLike((string) $params['keyword']) . '%';
+            $kw = '%' . SqlSafe::escapeLike((string) $params['keyword']) . '%';
             $query->where('food_name', 'like', $kw);
         }
 
@@ -38,7 +51,7 @@ class FoodService extends AbstractMiniService
         $rows = $query->forPage($page, $pageSize)->get();
 
         return Formatter::page(
-            $rows->map(fn (Food $food) => $this->formatFood($food, false)),
+            $rows->map(fn (Food $food) => $this->formatFood($food, true)),
             $total,
             $page,
             $pageSize
@@ -50,7 +63,10 @@ class FoodService extends AbstractMiniService
      */
     public function detail(int $id): array
     {
-        return $this->formatFood($this->mustFood($id), true);
+        $food = $this->mustFood($id);
+        $food->load('specs');
+
+        return $this->formatFood($food, true);
     }
 
     /**
@@ -71,7 +87,9 @@ class FoodService extends AbstractMiniService
             return $food;
         });
 
-        return $this->formatFood($food->refresh(), true);
+        $this->logger->info('mini.food.create', ['id' => $food->id, 'family_id' => $familyId, 'uid' => $this->uid()]);
+
+        return $this->formatFood($food->load('specs'), true);
     }
 
     /**
@@ -89,7 +107,9 @@ class FoodService extends AbstractMiniService
             }
         });
 
-        return $this->formatFood($food->refresh(), true);
+        $this->logger->info('mini.food.update', ['id' => $food->id, 'uid' => $this->uid()]);
+
+        return $this->formatFood($food->load('specs'), true);
     }
 
     public function delete(int $id): void
@@ -99,6 +119,7 @@ class FoodService extends AbstractMiniService
             FoodSpec::query()->where('food_id', $food->id)->delete();
             $food->delete();
         });
+        $this->logger->info('mini.food.delete', ['id' => $id, 'uid' => $this->uid()]);
     }
 
     /**
@@ -120,8 +141,8 @@ class FoodService extends AbstractMiniService
         $this->mustFood($foodId);
         $spec = new FoodSpec();
         $spec->food_id = $foodId;
-        $spec->spec_name = (string) ($payload['spec_name'] ?? '');
-        $spec->spec_value = (string) ($payload['spec_value'] ?? '');
+        $spec->spec_name = trim((string) ($payload['spec_name'] ?? ''));
+        $spec->spec_value = trim((string) ($payload['spec_value'] ?? ''));
         $spec->save();
 
         return Formatter::row($spec);
@@ -135,10 +156,10 @@ class FoodService extends AbstractMiniService
     {
         $spec = $this->mustSpec($id);
         if (isset($payload['spec_name'])) {
-            $spec->spec_name = (string) $payload['spec_name'];
+            $spec->spec_name = trim((string) $payload['spec_name']);
         }
         if (isset($payload['spec_value'])) {
-            $spec->spec_value = (string) $payload['spec_value'];
+            $spec->spec_value = trim((string) $payload['spec_value']);
         }
         $spec->save();
 
@@ -177,7 +198,7 @@ class FoodService extends AbstractMiniService
     {
         $food->family_id = $familyId;
         if (isset($payload['food_name'])) {
-            $food->food_name = (string) $payload['food_name'];
+            $food->food_name = trim((string) $payload['food_name']);
         }
         if (array_key_exists('food_img', $payload)) {
             $food->food_img = (string) ($payload['food_img'] ?? '');
@@ -191,7 +212,7 @@ class FoodService extends AbstractMiniService
     }
 
     /**
-     * @param  null|array<int, array<string, mixed>>  $specs
+     * 全量覆盖规格行。前端 flattenSpecs：[{spec_name, spec_value}]，value 为逗号拼接选项.
      */
     private function syncSpecs(int $foodId, mixed $specs): void
     {
@@ -200,13 +221,17 @@ class FoodService extends AbstractMiniService
         }
         FoodSpec::query()->where('food_id', $foodId)->delete();
         foreach ($specs as $item) {
-            if (! is_array($item) || empty($item['spec_name'])) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $name = trim((string) ($item['spec_name'] ?? ''));
+            if ($name === '') {
                 continue;
             }
             $spec = new FoodSpec();
             $spec->food_id = $foodId;
-            $spec->spec_name = (string) $item['spec_name'];
-            $spec->spec_value = (string) ($item['spec_value'] ?? '');
+            $spec->spec_name = $name;
+            $spec->spec_value = trim((string) ($item['spec_value'] ?? ''));
             $spec->save();
         }
     }
@@ -219,7 +244,10 @@ class FoodService extends AbstractMiniService
         $data = Formatter::row($food);
         $data['cook_uid_list'] = Formatter::splitIds($food->cook_uids);
         if ($withSpecs) {
-            $data['specs'] = Formatter::list($food->specs()->orderBy('id')->get());
+            $specs = $food->relationLoaded('specs')
+                ? $food->specs
+                : $food->specs()->orderBy('id')->get();
+            $data['specs'] = Formatter::list($specs);
         }
 
         return $data;

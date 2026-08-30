@@ -4,6 +4,12 @@ declare(strict_types=1);
 /**
  * 小程序用户 jt_jiating_user.
  *
+ * 关联：
+ * - families() 多对多，经 family_member
+ * - memberships() 成员记录
+ * - orders() 作为点餐人
+ * - cookOrders() 作为烹饪人
+ *
  * @property int $id
  * @property string $openid
  * @property string $nickname
@@ -54,5 +60,15 @@ class User extends AbstractMiniModel
     public function memberships(): HasMany
     {
         return $this->hasMany(FamilyMember::class, 'uid', 'id');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'order_uid', 'id');
+    }
+
+    public function cookOrders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'cook_uid', 'id');
     }
 }

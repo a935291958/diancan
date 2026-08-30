@@ -41,7 +41,7 @@ class FamilyService extends AbstractMiniService
     {
         $familyId = AuthContext::currentFamilyId();
         if ($familyId <= 0) {
-            throw new BusinessException(ResultCode::NOT_FOUND, '尚未加入任何家庭');
+            return [];
         }
 
         return $this->detail($familyId);
@@ -176,6 +176,11 @@ class FamilyService extends AbstractMiniService
             $row['nickname'] = $user?->nickname ?? '';
             $row['avatar'] = $user?->avatar ?? '';
             $row['is_admin'] = $family->isAdmin((int) $member->uid);
+            $row['user'] = $user ? [
+                'id' => (int) $user->id,
+                'nickname' => $user->nickname,
+                'avatar' => $user->avatar,
+            ] : null;
 
             return $row;
         })->all();

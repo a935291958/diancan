@@ -4,6 +4,9 @@ declare(strict_types=1);
 /**
  * 菜品 jt_jiating_food.
  *
+ * 关联：specs 一对多、family、creator、orders。
+ * FamilyIsolate 自动限制 family_id。
+ *
  * @property int $id
  * @property int $family_id
  * @property string $food_name
@@ -59,5 +62,10 @@ class Food extends AbstractMiniModel
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'create_uid', 'id');
+    }
+
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'food_id', 'id');
     }
 }

@@ -3,7 +3,9 @@
 declare(strict_types=1);
 /**
  * 家庭 jt_jiating_family.
- * 无 family_id 字段，隔离在 Service 层用 AuthContext::assertFamily(id)。
+ *
+ * 关联：members / admin / foods / orders。
+ * 本表无 family_id，越权校验在 Service + AuthContext::assertFamily。
  *
  * @property int $id
  * @property string $family_name
@@ -17,6 +19,7 @@ namespace App\Model\Mini;
 
 use Hyperf\Database\Model\Relations\BelongsTo;
 use Hyperf\Database\Model\Relations\HasMany;
+use Hyperf\Database\Model\Relations\HasManyThrough;
 
 class Family extends AbstractMiniModel
 {
@@ -55,6 +58,11 @@ class Family extends AbstractMiniModel
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class, 'family_id', 'id');
+    }
+
+    public function specs(): HasManyThrough
+    {
+        return $this->hasManyThrough(FoodSpec::class, Food::class, 'family_id', 'food_id', 'id', 'id');
     }
 
     public function isAdmin(int $uid): bool

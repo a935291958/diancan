@@ -69,9 +69,9 @@ class FamilyController extends AbstractMiniController
         return $this->success();
     }
 
-    public function leave(): Result
+    public function leave(FamilyValidate $validate): Result
     {
-        $familyId = SqlSafe::uint($this->request()->input('family_id', 0));
+        $familyId = SqlSafe::uint($validate->validated()['family_id'] ?? 0);
         $this->familyService->leave($familyId > 0 ? $familyId : null);
 
         return $this->success();

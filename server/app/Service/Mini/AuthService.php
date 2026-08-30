@@ -2,26 +2,35 @@
 
 declare(strict_types=1);
 /**
- * 微信登录：code 换 openid，签发用户表 token.
+ * 微信登录：code 换 openid，签发 token；已加入家庭时带回 family 供前端落库.
  */
 
 namespace App\Service\Mini;
 
 use App\Exception\BusinessException;
 use App\Http\Common\ResultCode;
+use App\Model\Mini\Family;
+use App\Model\Mini\FamilyMember;
 use App\Model\Mini\User;
 use App\Support\Formatter;
 use Hyperf\Guzzle\ClientFactory;
+use Hyperf\Logger\LoggerFactory;
+use Psr\Log\LoggerInterface;
 
 class AuthService extends AbstractMiniService
 {
+    private LoggerInterface $logger;
+
     public function __construct(
-        private readonly ClientFactory $clientFactory
-    ) {}
+        private readonly ClientFactory $clientFactory,
+        LoggerFactory $loggerFactory
+    ) {
+        $this->logger = $loggerFactory->get('api');
+    }
 
     /**
      * @param  array{code: string, nickname?: string, avatar?: string}  $payload
-     * @return array{token: string, userInfo: array<string, mixed>, user: array<string, mixed>}
+     * @return array<string, mixed>
      */
     public function wxLogin(array $payload): array
     {
@@ -32,7 +41,8 @@ class AuthService extends AbstractMiniService
 
         $openid = $this->code2openid($code);
         $user = User::query()->where('openid', $openid)->first();
-        if (! $user instanceof User) {
+        $isNew = ! $user instanceof User;
+        if ($isNew) {
             $user = new User();
             $user->openid = $openid;
             $user->nickname = (string) ($payload['nickname'] ?? '微信用户');
@@ -51,12 +61,40 @@ class AuthService extends AbstractMiniService
         $user->save();
 
         $data = Formatter::row($user, ['token']);
+        $family = $this->firstFamilyOf((int) $user->id);
+
+        $this->logger->info('mini.wx_login', [
+            'uid' => $user->id,
+            'new' => $isNew,
+            'family_id' => $family['id'] ?? 0,
+        ]);
 
         return [
             'token' => $token,
             'userInfo' => $data,
             'user' => $data,
+            'family' => $family,
         ];
+    }
+
+    /**
+     * @return null|array<string, mixed>
+     */
+    private function firstFamilyOf(int $uid): ?array
+    {
+        $member = FamilyMember::query()->where('uid', $uid)->orderBy('id')->first();
+        if (! $member instanceof FamilyMember) {
+            return null;
+        }
+        $family = Family::query()->find($member->family_id);
+        if (! $family instanceof Family) {
+            return null;
+        }
+        $row = Formatter::row($family);
+        $row['is_admin'] = $family->isAdmin($uid);
+        $row['member_count'] = FamilyMember::query()->where('family_id', $family->id)->count();
+
+        return $row;
     }
 
     private function code2openid(string $code): string

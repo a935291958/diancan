@@ -1,0 +1,28 @@
+/**
+ * 设计 Token（SCSS）
+ * 与 uni.scss 保持一致；独立 scss 文件可 @import 本文件
+ */
+
+$color-primary: #ff6b35;
+$color-primary-light: #fff1eb;
+$color-success: #19be6b;
+$color-warning: #ff9900;
+$color-danger: #fa3534;
+$color-info: #909399;
+
+$text-main: #303133;
+$text-content: #606266;
+$text-tips: #909399;
+$text-placeholder: #c0c4cc;
+
+$bg-page: #f7f8fa;
+$bg-white: #ffffff;
+$border-color: #ebeef5;
+
+$radius-sm: 8rpx;
+$radius-md: 16rpx;
+$radius-lg: 24rpx;
+
+$shadow-card: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
+
+$safe-bottom: env(safe-area-inset-bottom);

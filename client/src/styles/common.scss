@@ -1,0 +1,102 @@
+/**
+ * 全局通用样式
+ * 在 App.vue 中引入，作用于整个小程序
+ */
+@import './variables.scss';
+
+page {
+  background-color: $bg-page;
+  color: $text-main;
+  font-size: 28rpx;
+  line-height: 1.5;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue',
+    Helvetica, 'Microsoft YaHei', Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+view,
+text,
+scroll-view,
+swiper,
+button,
+input,
+textarea,
+image {
+  box-sizing: border-box;
+}
+
+image {
+  display: block;
+  max-width: 100%;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  line-height: inherit;
+
+  &::after {
+    border: none;
+  }
+}
+
+.page-wrap {
+  min-height: 100vh;
+  padding-bottom: calc(24rpx + #{$safe-bottom});
+  background-color: $bg-page;
+}
+
+.page-pad {
+  padding: 24rpx;
+}
+
+.card {
+  background: $bg-white;
+  border-radius: $radius-md;
+  box-shadow: $shadow-card;
+}
+
+.safe-bottom {
+  padding-bottom: $safe-bottom;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.flex-between {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.flex-1 {
+  flex: 1;
+  min-width: 0;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.text-primary {
+  color: $color-primary;
+}
+
+.text-tips {
+  color: $text-tips;
+}
+
+.mt-12 {
+  margin-top: 12rpx;
+}
+
+.mt-24 {
+  margin-top: 24rpx;
+}

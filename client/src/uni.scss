@@ -1,0 +1,47 @@
+/**
+ * uni.scss —— uni-app 内置特殊样式文件，会自动注入到每个 vue 的 style 中
+ * 仅放变量和 uview-plus 主题，禁止引入组件样式（否则包体积会暴增）
+ */
+
+/* 覆盖 uView 主题色，需写在 theme 引入之前 */
+$u-primary: #ff6b35;
+$u-type-primary: #ff6b35;
+$u-type-success: #19be6b;
+$u-type-warning: #ff9900;
+$u-type-error: #fa3534;
+$u-type-info: #909399;
+$u-main-color: #303133;
+$u-content-color: #606266;
+$u-tips-color: #909399;
+$u-light-color: #c0c4cc;
+$u-border-color: #e4e7ed;
+$u-bg-color: #f7f8fa;
+$u-form-item-border-color: #e4e7ed;
+
+@import 'uview-plus/theme.scss';
+
+/* 业务设计 Token，页面 scoped 样式可直接使用 */
+$color-primary: #ff6b35;
+$color-primary-light: #fff1eb;
+$color-success: #19be6b;
+$color-warning: #ff9900;
+$color-danger: #fa3534;
+$color-info: #909399;
+
+$text-main: #303133;
+$text-content: #606266;
+$text-tips: #909399;
+$text-placeholder: #c0c4cc;
+
+$bg-page: #f7f8fa;
+$bg-white: #ffffff;
+$border-color: #ebeef5;
+
+$radius-sm: 8rpx;
+$radius-md: 16rpx;
+$radius-lg: 24rpx;
+
+$shadow-card: 0 8rpx 24rpx rgba(0, 0, 0, 0.04);
+
+/* 底部安全区：刘海屏 / 全面屏适配 */
+$safe-bottom: env(safe-area-inset-bottom);

@@ -1,0 +1,41 @@
+/**
+ * SCSS Mixins
+ * 使用方式：@import 后 @include flex-center;
+ */
+@import './variables.scss';
+
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-column {
+  display: flex;
+  flex-direction: column;
+}
+
+@mixin hairline($color: $border-color, $direction: bottom) {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    @if $direction == bottom {
+      bottom: 0;
+    } @else {
+      top: 0;
+    }
+    height: 1px;
+    background: $color;
+    transform: scaleY(0.5);
+    transform-origin: 0 100%;
+  }
+}
+
+@mixin safe-page {
+  min-height: 100vh;
+  padding-bottom: calc(24rpx + #{$safe-bottom});
+}

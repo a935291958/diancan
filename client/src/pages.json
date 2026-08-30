@@ -1,0 +1,188 @@
+{
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^u--(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^up-(.*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^u-([^-].*)": "uview-plus/components/u-$1/u-$1.vue",
+      "^PageEmpty$": "@/components/PageEmpty/PageEmpty.vue",
+      "^PageLoading$": "@/components/PageLoading/PageLoading.vue",
+      "^DishCard$": "@/components/DishCard/DishCard.vue"
+    }
+  },
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "家庭点餐",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/menu/index",
+      "style": {
+        "navigationBarTitleText": "点餐",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "订单",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/family/index",
+      "style": {
+        "navigationBarTitleText": "家庭",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/mine/index",
+      "style": {
+        "navigationBarTitleText": "我的"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/cart/index",
+      "style": {
+        "navigationBarTitleText": "购物车"
+      }
+    },
+    {
+      "path": "pages/order/confirm",
+      "style": {
+        "navigationBarTitleText": "确认订单"
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/family/create",
+      "style": {
+        "navigationBarTitleText": "创建家庭"
+      }
+    },
+    {
+      "path": "pages/family/join",
+      "style": {
+        "navigationBarTitleText": "加入家庭"
+      }
+    },
+    {
+      "path": "pages/family/detail",
+      "style": {
+        "navigationBarTitleText": "家庭详情"
+      }
+    },
+    {
+      "path": "pages/family/members",
+      "style": {
+        "navigationBarTitleText": "家庭成员"
+      }
+    },
+    {
+      "path": "pages/dish/list",
+      "style": {
+        "navigationBarTitleText": "菜品管理",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/dish/detail",
+      "style": {
+        "navigationBarTitleText": "菜品详情"
+      }
+    },
+    {
+      "path": "pages/dish/edit",
+      "style": {
+        "navigationBarTitleText": "编辑菜品"
+      }
+    },
+    {
+      "path": "pages/category/index",
+      "style": {
+        "navigationBarTitleText": "分类管理"
+      }
+    },
+    {
+      "path": "pages/today/index",
+      "style": {
+        "navigationBarTitleText": "今日菜单",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/mine/profile",
+      "style": {
+        "navigationBarTitleText": "个人资料"
+      }
+    },
+    {
+      "path": "pages/mine/settings",
+      "style": {
+        "navigationBarTitleText": "设置"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "white",
+    "navigationBarTitleText": "家庭点餐",
+    "navigationBarBackgroundColor": "#FF6B35",
+    "backgroundColor": "#F7F8FA",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#909399",
+    "selectedColor": "#FF6B35",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/menu/index",
+        "iconPath": "static/tabbar/menu.png",
+        "selectedIconPath": "static/tabbar/menu-active.png",
+        "text": "点餐"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "iconPath": "static/tabbar/order.png",
+        "selectedIconPath": "static/tabbar/order-active.png",
+        "text": "订单"
+      },
+      {
+        "pagePath": "pages/family/index",
+        "iconPath": "static/tabbar/family.png",
+        "selectedIconPath": "static/tabbar/family-active.png",
+        "text": "家庭"
+      },
+      {
+        "pagePath": "pages/mine/index",
+        "iconPath": "static/tabbar/mine.png",
+        "selectedIconPath": "static/tabbar/mine-active.png",
+        "text": "我的"
+      }
+    ]
+  }
+}

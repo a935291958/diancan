@@ -22,7 +22,7 @@ class CorsMiddleware implements MiddlewareInterface
         }
 
         if (strtoupper($request->getMethod()) === 'OPTIONS') {
-            return $this->withCors($request, ResponseContext::get());
+            return $this->withCors($request, ResponseContext::get())->withStatus(204);
         }
 
         return $this->withCors($request, $handler->handle($request));

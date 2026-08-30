@@ -49,6 +49,11 @@ class TokenAuthMiddleware implements MiddlewareInterface
                 return true;
             }
         }
+        foreach (config('mini.auth_whitelist_prefix', []) as $prefix) {
+            if ($prefix !== '' && str_starts_with($path, (string) $prefix)) {
+                return true;
+            }
+        }
 
         return false;
     }

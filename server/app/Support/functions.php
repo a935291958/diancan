@@ -47,12 +47,19 @@ if (! function_exists('api_abort')) {
 
 if (! function_exists('mini_table')) {
     /**
-     * 拼接小程序业务表名，例如 mini_table('user') => jt_jiating_user.
+     * 拼接小程序业务表名，并去掉全局 DB_PREFIX，避免重复前缀。
+     *
+     * 例：MINI_TABLE_PREFIX=jt_jiating_ + DB_PREFIX=jt_ + user
+     *     => 逻辑全名 jt_jiating_user，模型 table=jiating_user，SQL 最终 jt_jiating_user.
      */
     function mini_table(string $name): string
     {
-        $prefix = (string) config('mini.table_prefix', 'jt_jiating_');
+        $full = (string) config('mini.table_prefix', 'jt_jiating_') . $name;
+        $global = (string) config('databases.default.prefix', '');
+        if ($global !== '' && str_starts_with($full, $global)) {
+            return substr($full, strlen($global));
+        }
 
-        return $prefix . $name;
+        return $full;
     }
 }

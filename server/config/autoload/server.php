@@ -33,6 +33,7 @@ return [
     'settings' => [
         // 开启外部可以访问
         Constant::OPTION_ENABLE_STATIC_HANDLER => true,
+        Constant::OPTION_DOCUMENT_ROOT => BASE_PATH . '/public',
         Constant::OPTION_ENABLE_COROUTINE => true,
         Constant::OPTION_WORKER_NUM => env('APP_DEBUG') ? 1 : swoole_cpu_num(),
         Constant::OPTION_PID_FILE => BASE_PATH . '/runtime/hyperf.pid',

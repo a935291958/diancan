@@ -27,6 +27,7 @@ return [
         'charset' => env('DB_CHARSET', 'utf8mb4'),
         'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
         'prefix' => env('DB_PREFIX', ''),
+        // 小程序业务表前缀 jt_jiating_ 由 Mini 模型单独拼接，切勿写入全局 prefix
         'pool' => [
             'min_connections' => 1,
             'max_connections' => 20,

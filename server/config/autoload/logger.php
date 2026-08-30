@@ -14,6 +14,19 @@ use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Level;
 
+$formatter = [
+    'class' => LineFormatter::class,
+    'constructor' => [
+        'format' => null,
+        'dateFormat' => 'Y-m-d H:i:s',
+        'allowInlineLineBreaks' => true,
+    ],
+];
+
+$processor = [
+    'class' => UuidRequestIdProcessor::class,
+];
+
 return [
     'default' => [
         'handler' => [
@@ -23,17 +36,8 @@ return [
                 'level' => Level::Debug,
             ],
         ],
-        'formatter' => [
-            'class' => LineFormatter::class,
-            'constructor' => [
-                'format' => null,
-                'dateFormat' => 'Y-m-d H:i:s',
-                'allowInlineLineBreaks' => true,
-            ],
-        ],
-        'processor' => [
-            'class' => UuidRequestIdProcessor::class,
-        ],
+        'formatter' => $formatter,
+        'processor' => $processor,
     ],
     'sql' => [
         'handler' => [
@@ -43,16 +47,30 @@ return [
                 'level' => Level::Debug,
             ],
         ],
-        'formatter' => [
-            'class' => LineFormatter::class,
+        'formatter' => $formatter,
+        'processor' => $processor,
+    ],
+    // AbstractHandler::report() 使用该通道
+    'error' => [
+        'handler' => [
+            'class' => RotatingFileHandler::class,
             'constructor' => [
-                'format' => null,
-                'dateFormat' => 'Y-m-d H:i:s',
-                'allowInlineLineBreaks' => true,
+                'filename' => BASE_PATH . '/runtime/logs/error.log',
+                'level' => Level::Error,
             ],
         ],
-        'processor' => [
-            'class' => UuidRequestIdProcessor::class,
+        'formatter' => $formatter,
+        'processor' => $processor,
+    ],
+    'api' => [
+        'handler' => [
+            'class' => RotatingFileHandler::class,
+            'constructor' => [
+                'filename' => BASE_PATH . '/runtime/logs/api.log',
+                'level' => Level::Info,
+            ],
         ],
+        'formatter' => $formatter,
+        'processor' => $processor,
     ],
 ];

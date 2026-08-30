@@ -11,8 +11,10 @@ declare(strict_types=1);
  */
 use App\Exception\Handler\AppExceptionHandler;
 use App\Exception\Handler\BusinessExceptionHandler;
+use App\Exception\Handler\HttpExceptionHandler;
 use App\Exception\Handler\JwtExceptionHandler;
 use App\Exception\Handler\ModeNotFoundHandler;
+use App\Exception\Handler\QueryExceptionHandler;
 use App\Exception\Handler\UnauthorizedExceptionHandler;
 use App\Exception\Handler\ValidationExceptionHandler;
 
@@ -28,6 +30,10 @@ return [
             ValidationExceptionHandler::class,
             // 处理JWT异常
             JwtExceptionHandler::class,
+            // HTTP 404/405
+            HttpExceptionHandler::class,
+            // SQL 异常不泄露语句
+            QueryExceptionHandler::class,
             // 处理应用异常
             AppExceptionHandler::class,
         ],

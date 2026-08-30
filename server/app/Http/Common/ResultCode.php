@@ -26,8 +26,8 @@ enum ResultCode: int
     #[Message('result.success')]
     case SUCCESS = 200;
 
-    #[Message('result.fail')]
-    case FAIL = 500;
+    #[Message('result.bad_request')]
+    case BAD_REQUEST = 400;
 
     #[Message('result.unauthorized')]
     case UNAUTHORIZED = 401;
@@ -44,9 +44,18 @@ enum ResultCode: int
     #[Message('result.not_acceptable')]
     case NOT_ACCEPTABLE = 406;
 
+    #[Message('result.repeat_submit')]
+    case REPEAT_SUBMIT = 409;
+
     #[Message('result.conflict')]
     case UNPROCESSABLE_ENTITY = 422;
 
     #[Message('result.disabled')]
     case DISABLED = 423;
+
+    #[Message('result.too_many')]
+    case TOO_MANY_REQUESTS = 429;
+
+    #[Message('result.fail')]
+    case FAIL = 500;
 }

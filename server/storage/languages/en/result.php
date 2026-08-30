@@ -11,12 +11,15 @@ declare(strict_types=1);
  */
 return [
     'success' => 'Success',
-    'fail' => 'Fail',
-    'unauthorized' => 'Unauthorized',
-    'forbidden' => 'Forbidden',
+    'fail' => 'Internal server error',
+    'bad_request' => 'Bad request',
+    'unauthorized' => 'Unauthorized or token expired',
+    'forbidden' => 'No permission to access this family data',
     'not_found' => 'Not Found',
     'method_not_allowed' => 'Method Not Allowed',
     'not_acceptable' => 'Not Acceptable',
+    'repeat_submit' => 'Duplicate submission, please retry later',
     'conflict' => 'Request parameter error',
-    'disabled' => 'Account disabled'
+    'disabled' => 'Account disabled',
+    'too_many' => 'Too many requests',
 ];

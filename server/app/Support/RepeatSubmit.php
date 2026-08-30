@@ -33,11 +33,10 @@ final class RepeatSubmit
         $prefix = (string) ($config['redis_prefix'] ?? 'mini:repeat:');
         $key = $prefix . $this->buildHash($request);
 
-        // SET key 1 EX ttl NX —— 已存在则视为重复提交
-        $ok = $this->redis->set($key, '1', ['NX', 'EX' => $ttl]);
-        if ($ok === false || $ok === null) {
+        if ($this->redis->exists($key)) {
             throw new BusinessException(ResultCode::REPEAT_SUBMIT);
         }
+        $this->redis->setex($key, $ttl, '1');
     }
 
     private function buildHash(ServerRequestInterface $request): string

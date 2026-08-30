@@ -15,7 +15,7 @@
   "description": "Quickly build a background management system for web applications",
   "license": "Apache-2.0",
   "require": {
-    "php": ">=8.2",
+    "php": ">=8.3",
     "ext-fileinfo": "*",
     "ext-json": "*",
     "ext-openssl": "*",
@@ -85,11 +85,14 @@
     "ext-pdo_mysql": "Required to use MySQL Client.",
     "ext-redis": "Required to use Redis Client."
   },
-  "autoload": {
-    "psr-4": {
-      "App\\": "app/"
-    }
-  },
+    "autoload": {
+        "psr-4": {
+            "App\\": "app/"
+        },
+        "files": [
+            "app/Support/functions.php"
+        ]
+    },
   "autoload-dev": {
     "psr-4": {
       "HyperfTests\\": "./tests/"

@@ -12,7 +12,7 @@ use App\Exception\BusinessException;
 use App\Http\Common\ResultCode;
 use App\Support\ParamFilter;
 use App\Support\SqlSafe;
-use Hyperf\Context\RequestContext;
+use Hyperf\Context\Context;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -40,7 +40,7 @@ class ParamFilterMiddleware implements MiddlewareInterface
         if (is_array($body)) {
             $request = $request->withParsedBody($body);
         }
-        RequestContext::set($request);
+        Context::set(ServerRequestInterface::class, $request);
 
         return $handler->handle($request);
     }

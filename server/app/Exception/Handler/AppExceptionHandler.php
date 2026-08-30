@@ -20,9 +20,13 @@ final class AppExceptionHandler extends AbstractHandler
     public function handleResponse(\Throwable $throwable): Result
     {
         $this->stopPropagation();
+        $message = $this->isDebug()
+            ? $throwable->getMessage()
+            : '服务器内部错误';
+
         return new Result(
             code: ResultCode::FAIL,
-            message: $throwable->getMessage()
+            message: $message !== '' ? $message : '服务器内部错误',
         );
     }
 

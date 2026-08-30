@@ -14,6 +14,7 @@ use Psr\Log\LogLevel;
 
 return [
     'app_name' => env('APP_NAME', 'MineAdmin'),
+    'app_url' => env('APP_URL', 'http://127.0.0.1:9501'),
     'scan_cacheable' => ! env('APP_DEBUG', false),
     'debug' => env('APP_DEBUG', true),
     StdoutLoggerInterface::class => [

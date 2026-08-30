@@ -25,6 +25,11 @@ return [
         '/',
     ],
 
+    // 前缀白名单，例如上传图片回显
+    'auth_whitelist_prefix' => [
+        '/uploads/',
+    ],
+
     // 微信小程序
     'wechat' => [
         'app_id' => env('WECHAT_APPID', ''),

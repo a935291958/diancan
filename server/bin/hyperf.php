@@ -15,6 +15,7 @@ error_reporting(E_ALL);
 ! defined('HF_VERSION') && define('HF_VERSION', '3.1');     // 定义hyperf版本号
 
 require BASE_PATH . '/vendor/autoload.php';
+require_once BASE_PATH . '/app/Support/functions.php';
 
 // Self-called anonymous function that creates its own scope and keep the global namespace clean.
 (function () {

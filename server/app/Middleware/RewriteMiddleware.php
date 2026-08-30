@@ -8,7 +8,7 @@ declare(strict_types=1);
 
 namespace App\Middleware;
 
-use Hyperf\Context\RequestContext;
+use Hyperf\Context\Context;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
@@ -23,7 +23,7 @@ class RewriteMiddleware implements MiddlewareInterface
         $rewritten = $this->rewrite($path);
         if ($rewritten !== $path) {
             $request = $request->withUri($uri->withPath($rewritten));
-            RequestContext::set($request);
+            Context::set(ServerRequestInterface::class, $request);
         }
 
         return $handler->handle($request);

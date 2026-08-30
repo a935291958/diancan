@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * 模块：点餐 — 迁移 jt_jiating_order（select_spec 存规格 JSON）
  */
-use App\Support\MiniTable;
+use App\Http\Mini\Support\MiniTable;
 use Hyperf\Database\Migrations\Migration;
 use Hyperf\Database\Schema\Blueprint;
 use Hyperf\Database\Schema\Schema;

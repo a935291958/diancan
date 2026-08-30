@@ -90,7 +90,7 @@
             "App\\": "app/"
         },
         "files": [
-            "app/Support/functions.php"
+            "app/Http/Mini/Support/functions.php"
         ]
     },
   "autoload-dev": {

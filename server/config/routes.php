@@ -8,17 +8,17 @@ declare(strict_types=1);
  * UniApp 对接：/auth/wx-login、/user/*、/v1/family|food|order|upload
  * 分工独立 REST：/v1/duty/* ；同时兼容 /v1/order/today|/status|/cook
  */
-use App\Controller\AuthController;
-use App\Controller\DutyController;
-use App\Controller\FamilyController;
-use App\Controller\FoodController;
-use App\Controller\OrderController;
-use App\Controller\UploadController;
-use App\Controller\UserController;
-use App\Middleware\ApiLogMiddleware;
-use App\Middleware\FamilyIsolateMiddleware;
-use App\Middleware\RepeatSubmitMiddleware;
-use App\Middleware\TokenAuthMiddleware;
+use App\Http\Mini\Controller\AuthController;
+use App\Http\Mini\Controller\DutyController;
+use App\Http\Mini\Controller\FamilyController;
+use App\Http\Mini\Controller\FoodController;
+use App\Http\Mini\Controller\OrderController;
+use App\Http\Mini\Controller\UploadController;
+use App\Http\Mini\Controller\UserController;
+use App\Http\Mini\Middleware\ApiLogMiddleware;
+use App\Http\Mini\Middleware\FamilyIsolateMiddleware;
+use App\Http\Mini\Middleware\RepeatSubmitMiddleware;
+use App\Http\Mini\Middleware\TokenAuthMiddleware;
 use Hyperf\HttpServer\Router\Router;
 
 Router::get('/', static function () {

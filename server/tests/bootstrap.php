@@ -33,7 +33,7 @@ date_default_timezone_set('Asia/Shanghai');
 ! defined('HF_VERSION') && define('HF_VERSION', '3.1');     // 定义hyperf版本号
 
 require BASE_PATH . '/vendor/autoload.php';
-require_once BASE_PATH . '/app/Support/functions.php';
+require_once BASE_PATH . '/app/Http/Mini/Support/functions.php';
 
 Plugin::init();
 ClassLoader::init();

@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * 模块：菜品 — 迁移 jt_jiating_food / food_spec
  */
-use App\Support\MiniTable;
+use App\Http\Mini\Support\MiniTable;
 use Hyperf\Database\Migrations\Migration;
 use Hyperf\Database\Schema\Blueprint;
 use Hyperf\Database\Schema\Schema;

@@ -4,8 +4,18 @@
  */
 export const APP_ENV = import.meta.env.VITE_APP_ENV || 'development'
 
+function resolveBaseUrl() {
+  const configured = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+  const platform = import.meta.env.UNI_PLATFORM || (typeof process !== 'undefined' ? process.env.UNI_PLATFORM : '')
+  // H5 本地开发走 Vite 同源代理 /api，浏览器不再跨域访问 9501
+  if (import.meta.env.DEV && platform === 'h5') {
+    return '/api'
+  }
+  return configured
+}
+
 /** 接口根地址，末尾不含斜杠 */
-export const BASE_URL = String(import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+export const BASE_URL = resolveBaseUrl()
 
 /** 请求超时时间（毫秒） */
 export const REQUEST_TIMEOUT = Number(import.meta.env.VITE_REQUEST_TIMEOUT) || 15000

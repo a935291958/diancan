@@ -473,7 +473,7 @@ abstract class TestCase extends Assert implements Reorderable, SelfDescribing, T
      *
      * @internal This method is not covered by the backward compatibility promise for PHPUnit
      */
-    final public function runBare(): void
+    public function runBare(): void
     {
         $emitter = Event\Facade::emitter();
 

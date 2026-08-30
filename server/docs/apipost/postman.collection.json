@@ -1,0 +1,581 @@
+{
+  "info": {
+    "_postman_id": "dc-mini-apipost-20260830",
+    "name": "家庭点餐小程序",
+    "description": "导入 ApiPost：项目 → 导入 → 选择 Postman，上传本文件；再导入 postman.environment.json。\n鉴权 Header：Authorization Bearer {{token}}。先调「微信登录」把 data.token 写入环境变量 token。\n统一返回 {code,message,data}。",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://127.0.0.1:9501" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "用户",
+      "item": [
+        {
+          "name": "微信登录",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "try {",
+                  "  var json = pm.response.json();",
+                  "  if (json && json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "    pm.environment.set('token', json.data.token);",
+                  "  }",
+                  "} catch (e) {}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"wx_mock_code\",\n  \"nickname\": \"小明\",\n  \"avatar\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/auth/wx-login",
+            "description": "无需 Token。本地 WECHAT_MOCK=true 时任意 code 可登录。成功后自动写入 token。"
+          }
+        },
+        {
+          "name": "当前用户资料",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/user/info"
+          }
+        },
+        {
+          "name": "当前用户资料(REST)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/user"
+          }
+        },
+        {
+          "name": "更新资料",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"小明\",\n  \"avatar\": \"\",\n  \"phone\": \"13800138000\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/user/profile",
+            "description": "phone 仅校验，不落库。"
+          }
+        },
+        {
+          "name": "更新资料(REST)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nickname\": \"小明\",\n  \"avatar\": \"\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/user"
+          }
+        }
+      ]
+    },
+    {
+      "name": "家庭",
+      "item": [
+        {
+          "name": "创建家庭",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_name\": \"幸福一家\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/family"
+          }
+        },
+        {
+          "name": "加入家庭",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"invite_code\": \"A2B3C4\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/family/join",
+            "description": "邀请码 6 位字母数字。"
+          }
+        },
+        {
+          "name": "我的家庭列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/family/list"
+          }
+        },
+        {
+          "name": "当前家庭",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/family/current",
+            "description": "未加入家庭时 data=[]。"
+          }
+        },
+        {
+          "name": "家庭详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/family/{{familyId}}"
+          }
+        },
+        {
+          "name": "修改家庭名称",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_name\": \"幸福一家\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/family/{{familyId}}",
+            "description": "仅管理员。"
+          }
+        },
+        {
+          "name": "家庭成员",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/family/members?family_id={{familyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "family", "members"],
+              "query": [{ "key": "family_id", "value": "{{familyId}}" }]
+            }
+          }
+        },
+        {
+          "name": "移除成员",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/family/member/{{memberId}}",
+            "description": "路径 id 为成员记录 id，仅管理员。"
+          }
+        },
+        {
+          "name": "退出家庭",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_id\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/family/leave",
+            "description": "管理员不可退出。"
+          }
+        },
+        {
+          "name": "解散家庭",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/family/{{familyId}}",
+            "description": "仅管理员。级联删除菜品/点餐/成员。"
+          }
+        }
+      ]
+    },
+    {
+      "name": "菜品",
+      "item": [
+        {
+          "name": "菜品列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/food/list?family_id={{familyId}}&keyword=&category=&page=1&page_size=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "food", "list"],
+              "query": [
+                { "key": "family_id", "value": "{{familyId}}" },
+                { "key": "keyword", "value": "" },
+                { "key": "category", "value": "" },
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "200" }
+              ]
+            },
+            "description": "默认带 specs。"
+          }
+        },
+        {
+          "name": "新增菜品",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_id\": 1,\n  \"food_name\": \"番茄炒蛋\",\n  \"food_img\": \"\",\n  \"category\": \"家常\",\n  \"cook_uids\": [1],\n  \"specs\": [\n    { \"spec_name\": \"口味\", \"spec_value\": \"微辣,中辣,特辣\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/food"
+          }
+        },
+        {
+          "name": "菜品详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/food/{{foodId}}"
+          }
+        },
+        {
+          "name": "更新菜品",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"food_name\": \"番茄炒蛋\",\n  \"food_img\": \"\",\n  \"category\": \"家常\",\n  \"cook_uids\": [1],\n  \"specs\": [\n    { \"spec_name\": \"口味\", \"spec_value\": \"微辣,中辣\" }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/food/{{foodId}}"
+          }
+        },
+        {
+          "name": "删除菜品",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/food/{{foodId}}"
+          }
+        },
+        {
+          "name": "规格列表",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/food/{{foodId}}/specs"
+          }
+        },
+        {
+          "name": "新增规格",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spec_name\": \"份量\",\n  \"spec_value\": \"小份,大份\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/food/{{foodId}}/specs"
+          }
+        },
+        {
+          "name": "更新规格",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"spec_name\": \"份量\",\n  \"spec_value\": \"小份,中份,大份\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/food-spec/{{specId}}"
+          }
+        },
+        {
+          "name": "删除规格",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/food-spec/{{specId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "点餐",
+      "item": [
+        {
+          "name": "点餐列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/order/list?family_id={{familyId}}&order_date=&meal_type=&status=&page=1&page_size=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "order", "list"],
+              "query": [
+                { "key": "family_id", "value": "{{familyId}}" },
+                { "key": "order_date", "value": "", "description": "YYYY-MM-DD" },
+                { "key": "meal_type", "value": "", "description": "早/中/晚" },
+                { "key": "status", "value": "", "description": "1待制作 2制作中 3已完成 4已取消" },
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "200" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "提交点餐",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_id\": 1,\n  \"food_id\": 1,\n  \"meal_type\": \"晚\",\n  \"order_date\": \"2026-08-30\",\n  \"select_spec\": { \"口味\": \"微辣\" },\n  \"cook_uid\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/order"
+          }
+        },
+        {
+          "name": "批量点餐",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"family_id\": 1,\n  \"meal_type\": \"晚\",\n  \"order_date\": \"2026-08-30\",\n  \"items\": [\n    { \"food_id\": 1, \"select_spec\": { \"口味\": \"微辣\" }, \"cook_uid\": 1 }\n  ]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/order/batch"
+          }
+        },
+        {
+          "name": "点餐详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/order/{{orderId}}"
+          }
+        },
+        {
+          "name": "修改点餐",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"meal_type\": \"中\",\n  \"select_spec\": { \"口味\": \"中辣\" },\n  \"cook_uid\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/order/{{orderId}}"
+          }
+        },
+        {
+          "name": "删除点餐",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/v1/order/{{orderId}}"
+          }
+        },
+        {
+          "name": "当日看板(UniApp)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/order/today?family_id={{familyId}}&order_date=&meal_type=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "order", "today"],
+              "query": [
+                { "key": "family_id", "value": "{{familyId}}" },
+                { "key": "order_date", "value": "" },
+                { "key": "meal_type", "value": "" }
+              ]
+            },
+            "description": "与 GET /v1/duty/today 相同。"
+          }
+        },
+        {
+          "name": "更新状态(UniApp)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/order/{{orderId}}/status",
+            "description": "流转：1→2/4，2→3/4。"
+          }
+        },
+        {
+          "name": "指派烹饪(UniApp)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cook_uid\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/order/{{orderId}}/cook"
+          }
+        }
+      ]
+    },
+    {
+      "name": "分工",
+      "item": [
+        {
+          "name": "当日看板",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/duty/today?family_id={{familyId}}&order_date=&meal_type=&status=&cook_uid=",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "duty", "today"],
+              "query": [
+                { "key": "family_id", "value": "{{familyId}}" },
+                { "key": "order_date", "value": "" },
+                { "key": "meal_type", "value": "" },
+                { "key": "status", "value": "" },
+                { "key": "cook_uid", "value": "" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "我的烹饪任务",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/duty/mine?family_id={{familyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "duty", "mine"],
+              "query": [{ "key": "family_id", "value": "{{familyId}}" }]
+            }
+          }
+        },
+        {
+          "name": "按烹饪人汇总",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/duty/summary?family_id={{familyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "duty", "summary"],
+              "query": [{ "key": "family_id", "value": "{{familyId}}" }]
+            }
+          }
+        },
+        {
+          "name": "分工列表",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/v1/duty/list?family_id={{familyId}}&page=1&page_size=200",
+              "host": ["{{baseUrl}}"],
+              "path": ["v1", "duty", "list"],
+              "query": [
+                { "key": "family_id", "value": "{{familyId}}" },
+                { "key": "page", "value": "1" },
+                { "key": "page_size", "value": "200" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "分工列表(REST)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/duty"
+          }
+        },
+        {
+          "name": "分工详情",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/v1/duty/{{orderId}}"
+          }
+        },
+        {
+          "name": "更新制作状态",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 2\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/duty/{{orderId}}/status"
+          }
+        },
+        {
+          "name": "指派烹饪人",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cook_uid\": 1\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/v1/duty/{{orderId}}/cook"
+          }
+        }
+      ]
+    },
+    {
+      "name": "上传",
+      "item": [
+        {
+          "name": "上传图片",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "jpg/png/gif/webp，字段名必须为 file"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/v1/upload"
+          }
+        },
+        {
+          "name": "上传图片(别名)",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "file", "type": "file", "src": "" }
+              ]
+            },
+            "url": "{{baseUrl}}/upload"
+          }
+        },
+        {
+          "name": "图片回显",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": "{{baseUrl}}/uploads/20260830/example.webp",
+            "description": "无需登录。路径禁止 .. 。"
+          }
+        }
+      ]
+    }
+  ]
+}

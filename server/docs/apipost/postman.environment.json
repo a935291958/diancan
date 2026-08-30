@@ -1,0 +1,55 @@
+{
+  "id": "dc-mini-env-local",
+  "name": "家庭点餐-本地",
+  "values": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:9501",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "secret",
+      "enabled": true
+    },
+    {
+      "key": "familyId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "foodId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "orderId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "memberId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "specId",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "cookUid",
+      "value": "1",
+      "type": "default",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

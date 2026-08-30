@@ -1,0 +1,1269 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "家庭点餐小程序 API",
+    "description": "UniApp 对接接口。导入 ApiPost：项目 → 导入 → 选择 Swagger，上传本文件。\n\n鉴权：`Authorization: Bearer {token}`（也可传 Header `Token`）。白名单：`POST /auth/wx-login`、`GET /uploads/*`。\n\n统一返回 `{code,message,data}`。家庭数据按当前用户所属 family_id 隔离。写接口 2 秒防重复提交（上传除外）。\n\n点餐状态 1待制作 2制作中 3已完成 4已取消；餐段 早/中/晚。",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9501",
+      "description": "本地 Hyperf"
+    }
+  ],
+  "tags": [
+    { "name": "用户", "description": "微信登录与资料" },
+    { "name": "家庭", "description": "创建/加入/成员" },
+    { "name": "菜品", "description": "菜品与规格 CRUD" },
+    { "name": "点餐", "description": "提交/改删查" },
+    { "name": "分工", "description": "当日看板、指派、状态" },
+    { "name": "上传", "description": "图片上传与回显" }
+  ],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/auth/wx-login": {
+      "post": {
+        "tags": ["用户"],
+        "summary": "微信登录",
+        "description": "无需 Token。返回 token / userInfo / user / family，对齐 UniApp user.js。",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WxLoginBody" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/info": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "当前用户资料",
+        "operationId": "userInfo",
+        "responses": { "200": { "$ref": "#/components/responses/UserInfoOk" } }
+      }
+    },
+    "/user/profile": {
+      "put": {
+        "tags": ["用户"],
+        "summary": "更新资料",
+        "operationId": "userProfile",
+        "requestBody": { "$ref": "#/components/requestBodies/UserProfile" },
+        "responses": { "200": { "$ref": "#/components/responses/UserOk" } }
+      }
+    },
+    "/v1/user": {
+      "get": {
+        "tags": ["用户"],
+        "summary": "当前用户资料（REST 别名）",
+        "operationId": "userInfoV1",
+        "responses": { "200": { "$ref": "#/components/responses/UserInfoOk" } }
+      },
+      "put": {
+        "tags": ["用户"],
+        "summary": "更新资料（REST 别名）",
+        "operationId": "userProfileV1",
+        "requestBody": { "$ref": "#/components/requestBodies/UserProfile" },
+        "responses": { "200": { "$ref": "#/components/responses/UserOk" } }
+      }
+    },
+    "/v1/family/list": {
+      "get": {
+        "tags": ["家庭"],
+        "summary": "我的家庭列表",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FamilyListResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/family/current": {
+      "get": {
+        "tags": ["家庭"],
+        "summary": "当前家庭",
+        "description": "未加入家庭时 data 为空数组 []，不返回 404。",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FamilyOrEmptyResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/family/members": {
+      "get": {
+        "tags": ["家庭"],
+        "summary": "家庭成员",
+        "parameters": [
+          {
+            "name": "family_id",
+            "in": "query",
+            "schema": { "type": "integer", "minimum": 1 },
+            "description": "省略则用当前家庭"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MemberListResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/family/join": {
+      "post": {
+        "tags": ["家庭"],
+        "summary": "加入家庭",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FamilyJoinBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/FamilyOk" } }
+      }
+    },
+    "/v1/family/leave": {
+      "post": {
+        "tags": ["家庭"],
+        "summary": "退出家庭",
+        "description": "管理员不可退出，需先解散。",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FamilyLeaveBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/family": {
+      "post": {
+        "tags": ["家庭"],
+        "summary": "创建家庭",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FamilyCreateBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/FamilyOk" } }
+      }
+    },
+    "/v1/family/member/{id}": {
+      "delete": {
+        "tags": ["家庭"],
+        "summary": "移除成员",
+        "description": "仅管理员；不可移除自己。路径 id 为成员记录 id。",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/family/{id}": {
+      "get": {
+        "tags": ["家庭"],
+        "summary": "家庭详情",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/FamilyOk" } }
+      },
+      "put": {
+        "tags": ["家庭"],
+        "summary": "修改家庭名称",
+        "description": "仅管理员。",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FamilyCreateBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/FamilyOk" } }
+      },
+      "delete": {
+        "tags": ["家庭"],
+        "summary": "解散家庭",
+        "description": "仅管理员。级联删除菜品/规格/点餐/成员。",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/food/list": {
+      "get": {
+        "tags": ["菜品"],
+        "summary": "菜品列表",
+        "description": "默认带 specs。page_size 默认 200。",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "keyword", "in": "query", "schema": { "type": "string" }, "description": "按菜名模糊搜索" },
+          { "$ref": "#/components/parameters/QueryPage" },
+          { "$ref": "#/components/parameters/QueryPageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/FoodPageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/food": {
+      "post": {
+        "tags": ["菜品"],
+        "summary": "新增菜品",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FoodSaveBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/FoodOk" } }
+      }
+    },
+    "/v1/food/{id}/specs": {
+      "get": {
+        "tags": ["菜品"],
+        "summary": "菜品规格列表",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SpecListResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["菜品"],
+        "summary": "新增规格",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SpecBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/SpecOk" } }
+      }
+    },
+    "/v1/food/{id}": {
+      "get": {
+        "tags": ["菜品"],
+        "summary": "菜品详情",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/FoodOk" } }
+      },
+      "put": {
+        "tags": ["菜品"],
+        "summary": "更新菜品",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/FoodSaveBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/FoodOk" } }
+      },
+      "delete": {
+        "tags": ["菜品"],
+        "summary": "删除菜品",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/food-spec/{id}": {
+      "put": {
+        "tags": ["菜品"],
+        "summary": "更新规格",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SpecBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/SpecOk" } }
+      },
+      "delete": {
+        "tags": ["菜品"],
+        "summary": "删除规格",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/order/list": {
+      "get": {
+        "tags": ["点餐"],
+        "summary": "点餐列表",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" },
+          { "$ref": "#/components/parameters/QueryPage" },
+          { "$ref": "#/components/parameters/QueryPageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderPageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/order/today": {
+      "get": {
+        "tags": ["点餐", "分工"],
+        "summary": "当日点餐看板",
+        "description": "UniApp 路径，实现与 GET /v1/duty/today 相同。data 为数组。",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" },
+          { "$ref": "#/components/parameters/QueryCookUid" }
+        ],
+        "responses": { "200": { "$ref": "#/components/responses/OrderArrayOk" } }
+      }
+    },
+    "/v1/order/batch": {
+      "post": {
+        "tags": ["点餐"],
+        "summary": "批量点餐",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderBatchBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderArrayOk" } }
+      }
+    },
+    "/v1/order/{id}/status": {
+      "put": {
+        "tags": ["点餐", "分工"],
+        "summary": "更新点餐状态（UniApp）",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DutyStatusBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/v1/order/{id}/cook": {
+      "put": {
+        "tags": ["点餐", "分工"],
+        "summary": "指派烹饪人（UniApp）",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DutyCookBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/v1/order": {
+      "post": {
+        "tags": ["点餐"],
+        "summary": "提交点餐",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderCreateBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/v1/order/{id}": {
+      "get": {
+        "tags": ["点餐"],
+        "summary": "点餐详情",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      },
+      "put": {
+        "tags": ["点餐"],
+        "summary": "修改点餐",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/OrderUpdateBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      },
+      "delete": {
+        "tags": ["点餐"],
+        "summary": "删除点餐",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/EmptyOk" } }
+      }
+    },
+    "/v1/duty/today": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "当日分工看板",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" },
+          { "$ref": "#/components/parameters/QueryCookUid" }
+        ],
+        "responses": { "200": { "$ref": "#/components/responses/OrderArrayOk" } }
+      }
+    },
+    "/v1/duty/mine": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "我的烹饪任务",
+        "description": "当日 + cook_uid=当前用户。",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" }
+        ],
+        "responses": { "200": { "$ref": "#/components/responses/OrderArrayOk" } }
+      }
+    },
+    "/v1/duty/summary": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "按烹饪人汇总",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/DutySummaryResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/duty/list": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "分工分页列表",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" },
+          { "$ref": "#/components/parameters/QueryCookUid" },
+          { "$ref": "#/components/parameters/QueryPage" },
+          { "$ref": "#/components/parameters/QueryPageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderPageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/duty": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "分工分页列表（REST 别名）",
+        "parameters": [
+          { "$ref": "#/components/parameters/QueryFamilyId" },
+          { "$ref": "#/components/parameters/QueryOrderDate" },
+          { "$ref": "#/components/parameters/QueryMealType" },
+          { "$ref": "#/components/parameters/QueryStatus" },
+          { "$ref": "#/components/parameters/QueryCookUid" },
+          { "$ref": "#/components/parameters/QueryPage" },
+          { "$ref": "#/components/parameters/QueryPageSize" }
+        ],
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderPageResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/duty/{id}/status": {
+      "put": {
+        "tags": ["分工"],
+        "summary": "更新制作状态",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DutyStatusBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/v1/duty/{id}/cook": {
+      "put": {
+        "tags": ["分工"],
+        "summary": "指派烹饪人",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DutyCookBody" }
+            }
+          }
+        },
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/v1/duty/{id}": {
+      "get": {
+        "tags": ["分工"],
+        "summary": "分工详情",
+        "parameters": [{ "$ref": "#/components/parameters/PathId" }],
+        "responses": { "200": { "$ref": "#/components/responses/OrderOk" } }
+      }
+    },
+    "/upload": {
+      "post": {
+        "tags": ["上传"],
+        "summary": "上传图片",
+        "description": "表单字段名 file。jpg/png/gif/webp。不计入防重复提交。",
+        "requestBody": { "$ref": "#/components/requestBodies/UploadFile" },
+        "responses": { "200": { "$ref": "#/components/responses/UploadOk" } }
+      }
+    },
+    "/v1/upload": {
+      "post": {
+        "tags": ["上传"],
+        "summary": "上传图片（REST 别名）",
+        "requestBody": { "$ref": "#/components/requestBodies/UploadFile" },
+        "responses": { "200": { "$ref": "#/components/responses/UploadOk" } }
+      }
+    },
+    "/uploads/{path}": {
+      "get": {
+        "tags": ["上传"],
+        "summary": "图片回显",
+        "security": [],
+        "parameters": [
+          {
+            "name": "path",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "相对路径，如 20260830/abc.webp",
+            "example": "20260830/abc.webp"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "图片二进制",
+            "content": {
+              "image/jpeg": { "schema": { "type": "string", "format": "binary" } },
+              "image/png": { "schema": { "type": "string", "format": "binary" } },
+              "image/webp": { "schema": { "type": "string", "format": "binary" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Token",
+        "description": "登录返回的 data.token"
+      }
+    },
+    "parameters": {
+      "PathId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer", "minimum": 1 }
+      },
+      "QueryFamilyId": {
+        "name": "family_id",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1 },
+        "description": "省略则用当前家庭"
+      },
+      "QueryPage": {
+        "name": "page",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "default": 1 }
+      },
+      "QueryPageSize": {
+        "name": "page_size",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 200 }
+      },
+      "QueryOrderDate": {
+        "name": "order_date",
+        "in": "query",
+        "schema": { "type": "string", "format": "date" },
+        "description": "YYYY-MM-DD；当日接口默认今天"
+      },
+      "QueryMealType": {
+        "name": "meal_type",
+        "in": "query",
+        "schema": { "type": "string", "enum": ["早", "中", "晚"] }
+      },
+      "QueryStatus": {
+        "name": "status",
+        "in": "query",
+        "schema": { "type": "integer", "enum": [1, 2, 3, 4] },
+        "description": "1待制作 2制作中 3已完成 4已取消"
+      },
+      "QueryCookUid": {
+        "name": "cook_uid",
+        "in": "query",
+        "schema": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "requestBodies": {
+      "UserProfile": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/UserProfileBody" }
+          }
+        }
+      },
+      "UploadFile": {
+        "required": true,
+        "content": {
+          "multipart/form-data": {
+            "schema": {
+              "type": "object",
+              "required": ["file"],
+              "properties": {
+                "file": { "type": "string", "format": "binary" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "EmptyOk": {
+        "description": "成功，data 为空对象",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/EmptyResponse" }
+          }
+        }
+      },
+      "UserOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/UserResponse" }
+          }
+        }
+      },
+      "UserInfoOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/UserInfoResponse" }
+          }
+        }
+      },
+      "FamilyOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/FamilyResponse" }
+          }
+        }
+      },
+      "FoodOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/FoodResponse" }
+          }
+        }
+      },
+      "SpecOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/SpecResponse" }
+          }
+        }
+      },
+      "OrderOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/OrderResponse" }
+          }
+        }
+      },
+      "OrderArrayOk": {
+        "description": "成功，data 为点餐数组",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/OrderListResponse" }
+          }
+        }
+      },
+      "UploadOk": {
+        "description": "成功",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/UploadResponse" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ApiEnvelope": {
+        "type": "object",
+        "required": ["code", "message", "data"],
+        "properties": {
+          "code": { "type": "integer", "example": 200, "description": "200 成功，其余见 ResultCode" },
+          "message": { "type": "string", "example": "成功" },
+          "data": {}
+        }
+      },
+      "EmptyResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "object" }
+            }
+          }
+        ]
+      },
+      "WxLoginBody": {
+        "type": "object",
+        "required": ["code"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1, "maxLength": 128, "example": "wx_mock_code" },
+          "nickname": { "type": "string", "maxLength": 50, "example": "小明" },
+          "avatar": { "type": "string", "maxLength": 255, "example": "" }
+        }
+      },
+      "UserBrief": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "nickname": { "type": "string", "example": "小明" },
+          "avatar": { "type": "string", "example": "" }
+        }
+      },
+      "User": {
+        "allOf": [
+          { "$ref": "#/components/schemas/UserBrief" },
+          {
+            "type": "object",
+            "properties": {
+              "openid": { "type": "string" },
+              "create_time": { "type": "integer", "description": "Unix 秒" },
+              "update_time": { "type": "integer" }
+            }
+          }
+        ]
+      },
+      "UserInfo": {
+        "allOf": [
+          { "$ref": "#/components/schemas/User" },
+          {
+            "type": "object",
+            "properties": {
+              "family_ids": { "type": "array", "items": { "type": "integer" } },
+              "family_id": { "type": "integer", "example": 1 }
+            }
+          }
+        ]
+      },
+      "UserProfileBody": {
+        "type": "object",
+        "required": ["nickname"],
+        "properties": {
+          "nickname": { "type": "string", "minLength": 1, "maxLength": 50, "example": "小明" },
+          "avatar": { "type": "string", "maxLength": 255 },
+          "phone": { "type": "string", "description": "仅校验 1[3-9]开头11位，不落库", "example": "13800138000" }
+        }
+      },
+      "Family": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "family_name": { "type": "string", "example": "幸福一家" },
+          "invite_code": { "type": "string", "example": "A2B3C4" },
+          "admin_uid": { "type": "integer", "example": 1 },
+          "is_admin": { "type": "boolean" },
+          "member_count": { "type": "integer", "example": 3 },
+          "create_time": { "type": "integer" },
+          "update_time": { "type": "integer" }
+        }
+      },
+      "FamilyCreateBody": {
+        "type": "object",
+        "required": ["family_name"],
+        "properties": {
+          "family_name": { "type": "string", "minLength": 1, "maxLength": 50, "example": "幸福一家" }
+        }
+      },
+      "FamilyJoinBody": {
+        "type": "object",
+        "required": ["invite_code"],
+        "properties": {
+          "invite_code": { "type": "string", "minLength": 6, "maxLength": 6, "example": "A2B3C4" }
+        }
+      },
+      "FamilyLeaveBody": {
+        "type": "object",
+        "properties": {
+          "family_id": { "type": "integer", "minimum": 1 }
+        }
+      },
+      "Member": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "description": "成员记录 id" },
+          "family_id": { "type": "integer" },
+          "uid": { "type": "integer" },
+          "nickname": { "type": "string" },
+          "avatar": { "type": "string" },
+          "is_admin": { "type": "boolean" },
+          "create_time": { "type": "integer" },
+          "user": { "nullable": true, "allOf": [{ "$ref": "#/components/schemas/UserBrief" }] }
+        }
+      },
+      "FoodSpec": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "food_id": { "type": "integer" },
+          "spec_name": { "type": "string", "example": "口味" },
+          "spec_value": { "type": "string", "example": "微辣,中辣,特辣" },
+          "create_time": { "type": "integer" }
+        }
+      },
+      "SpecBody": {
+        "type": "object",
+        "required": ["spec_name", "spec_value"],
+        "properties": {
+          "spec_name": { "type": "string", "maxLength": 30, "example": "口味" },
+          "spec_value": { "type": "string", "maxLength": 100, "example": "微辣,中辣" }
+        }
+      },
+      "Food": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "family_id": { "type": "integer" },
+          "food_name": { "type": "string", "example": "番茄炒蛋" },
+          "food_img": { "type": "string" },
+          "category": { "type": "string", "example": "家常" },
+          "cook_uids": { "type": "string", "example": "1,2" },
+          "cook_uid_list": { "type": "array", "items": { "type": "integer" }, "example": [1, 2] },
+          "create_uid": { "type": "integer" },
+          "create_time": { "type": "integer" },
+          "update_time": { "type": "integer" },
+          "specs": { "type": "array", "items": { "$ref": "#/components/schemas/FoodSpec" } }
+        }
+      },
+      "FoodSaveBody": {
+        "type": "object",
+        "required": ["food_name"],
+        "properties": {
+          "family_id": { "type": "integer", "minimum": 1 },
+          "food_name": { "type": "string", "minLength": 1, "maxLength": 50, "example": "番茄炒蛋" },
+          "food_img": { "type": "string", "maxLength": 255 },
+          "category": { "type": "string", "maxLength": 20, "example": "家常" },
+          "cook_uids": { "description": "数组或逗号分隔字符串", "example": [1, 2] },
+          "specs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["spec_name"],
+              "properties": {
+                "spec_name": { "type": "string", "example": "口味" },
+                "spec_value": { "type": "string", "example": "微辣,中辣" }
+              }
+            }
+          }
+        }
+      },
+      "Order": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer" },
+          "family_id": { "type": "integer" },
+          "food_id": { "type": "integer" },
+          "select_spec": { "type": "object", "additionalProperties": true, "example": { "口味": "微辣" } },
+          "order_uid": { "type": "integer" },
+          "cook_uid": { "type": "integer" },
+          "meal_type": { "type": "string", "enum": ["早", "中", "晚"] },
+          "order_date": { "type": "string", "format": "date" },
+          "status": { "type": "integer", "enum": [1, 2, 3, 4] },
+          "create_time": { "type": "integer" },
+          "food_name": { "type": "string" },
+          "food_img": { "type": "string" },
+          "cook_uids": { "type": "string" },
+          "order_nickname": { "type": "string" },
+          "cook_nickname": { "type": "string" },
+          "food": { "nullable": true, "type": "object" },
+          "order_user": { "nullable": true, "allOf": [{ "$ref": "#/components/schemas/UserBrief" }] },
+          "cook": { "nullable": true, "allOf": [{ "$ref": "#/components/schemas/UserBrief" }] }
+        }
+      },
+      "OrderCreateBody": {
+        "type": "object",
+        "required": ["food_id", "meal_type"],
+        "properties": {
+          "family_id": { "type": "integer", "minimum": 1 },
+          "food_id": { "type": "integer", "minimum": 1, "example": 1 },
+          "select_spec": { "type": "object", "additionalProperties": true, "example": { "口味": "微辣" } },
+          "cook_uid": { "type": "integer", "minimum": 0, "example": 1 },
+          "order_uid": { "type": "integer", "minimum": 1 },
+          "meal_type": { "type": "string", "enum": ["早", "中", "晚"], "example": "晚" },
+          "order_date": { "type": "string", "format": "date" },
+          "status": { "type": "integer", "enum": [1, 2, 3, 4] }
+        }
+      },
+      "OrderUpdateBody": {
+        "type": "object",
+        "properties": {
+          "select_spec": { "type": "object", "additionalProperties": true },
+          "cook_uid": { "type": "integer", "minimum": 0 },
+          "meal_type": { "type": "string", "enum": ["早", "中", "晚"] },
+          "order_date": { "type": "string", "format": "date" },
+          "status": { "type": "integer", "enum": [1, 2, 3, 4] }
+        }
+      },
+      "OrderBatchBody": {
+        "type": "object",
+        "required": ["meal_type", "items"],
+        "properties": {
+          "family_id": { "type": "integer", "minimum": 1 },
+          "meal_type": { "type": "string", "enum": ["早", "中", "晚"], "example": "晚" },
+          "order_date": { "type": "string", "format": "date" },
+          "order_uid": { "type": "integer" },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 50,
+            "items": {
+              "type": "object",
+              "required": ["food_id"],
+              "properties": {
+                "food_id": { "type": "integer", "minimum": 1 },
+                "select_spec": { "type": "object", "additionalProperties": true },
+                "cook_uid": { "type": "integer" },
+                "status": { "type": "integer", "enum": [1, 2, 3, 4] }
+              }
+            }
+          }
+        }
+      },
+      "DutyStatusBody": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": { "type": "integer", "enum": [1, 2, 3, 4], "example": 2 }
+        }
+      },
+      "DutyCookBody": {
+        "type": "object",
+        "required": ["cook_uid"],
+        "properties": {
+          "cook_uid": { "type": "integer", "minimum": 1, "example": 1 }
+        }
+      },
+      "DutySummaryItem": {
+        "type": "object",
+        "properties": {
+          "cook_uid": { "type": "integer" },
+          "cook_nickname": { "type": "string" },
+          "pending": { "type": "integer" },
+          "cooking": { "type": "integer" },
+          "done": { "type": "integer" },
+          "cancelled": { "type": "integer" },
+          "total": { "type": "integer" }
+        }
+      },
+      "PageMeta": {
+        "type": "object",
+        "properties": {
+          "list": { "type": "array", "items": {} },
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "page_size": { "type": "integer" }
+        }
+      },
+      "LoginData": {
+        "type": "object",
+        "properties": {
+          "token": { "type": "string" },
+          "userInfo": { "$ref": "#/components/schemas/User" },
+          "user": { "$ref": "#/components/schemas/User" },
+          "family": { "nullable": true, "allOf": [{ "$ref": "#/components/schemas/Family" }] }
+        }
+      },
+      "LoginResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/LoginData" } } }
+        ]
+      },
+      "UserResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/User" } } }
+        ]
+      },
+      "UserInfoResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/UserInfo" } } }
+        ]
+      },
+      "FamilyResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/Family" } } }
+        ]
+      },
+      "FamilyListResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "array", "items": { "$ref": "#/components/schemas/Family" } }
+            }
+          }
+        ]
+      },
+      "FamilyOrEmptyResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "description": "家庭对象；未加入时为 []",
+                "oneOf": [
+                  { "$ref": "#/components/schemas/Family" },
+                  { "type": "array", "items": {}, "maxItems": 0 }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "MemberListResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "array", "items": { "$ref": "#/components/schemas/Member" } }
+            }
+          }
+        ]
+      },
+      "FoodResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/Food" } } }
+        ]
+      },
+      "FoodPageResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/PageMeta" },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "list": { "type": "array", "items": { "$ref": "#/components/schemas/Food" } }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "SpecResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/FoodSpec" } } }
+        ]
+      },
+      "SpecListResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "array", "items": { "$ref": "#/components/schemas/FoodSpec" } }
+            }
+          }
+        ]
+      },
+      "OrderResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/Order" } } }
+        ]
+      },
+      "OrderListResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } }
+            }
+          }
+        ]
+      },
+      "OrderPageResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": {
+                "allOf": [
+                  { "$ref": "#/components/schemas/PageMeta" },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "list": { "type": "array", "items": { "$ref": "#/components/schemas/Order" } }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "DutySummaryResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          {
+            "type": "object",
+            "properties": {
+              "data": { "type": "array", "items": { "$ref": "#/components/schemas/DutySummaryItem" } }
+            }
+          }
+        ]
+      },
+      "UploadData": {
+        "type": "object",
+        "properties": {
+          "url": { "type": "string", "example": "http://127.0.0.1:9501/uploads/20260830/abc.webp" },
+          "path": { "type": "string", "example": "/uploads/20260830/abc.webp" }
+        }
+      },
+      "UploadResponse": {
+        "allOf": [
+          { "$ref": "#/components/schemas/ApiEnvelope" },
+          { "type": "object", "properties": { "data": { "$ref": "#/components/schemas/UploadData" } } }
+        ]
+      }
+    }
+  }
+}
